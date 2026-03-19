@@ -1,15 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediaVault - Data Ingestion</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 min-h-screen p-8">
-    <div class="max-w-2xl mx-auto mb-4 text-right">
-        <a href="{{ route('dashboard') }}" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm">View Dashboard →</a>
-    </div>
+@extends('layouts.app')
+
+@section('title', 'Data Ingestion')
+
+@section('content')
     <div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
         <h1 class="text-2xl font-bold mb-6 text-gray-800">MediaVault Data Ingestion</h1>
         
@@ -64,5 +57,4 @@
             </div>
         </form>
     </div>
-</body>
-</html>
+@endsection

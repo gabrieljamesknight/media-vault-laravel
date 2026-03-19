@@ -1,0 +1,662 @@
+> build a Tailwind CSS Dashboard to view the results of the processed media items. First, create a DashboardController with an index method. this method needs to fetch all batch records and      
+   their related MediaItem records, ordered by the newest first. Set up a GET route for /dashboard in web.php.after this build a polished Tailwind CSS view at resources/views/dashboard.blade.php. 
+   this should look like a modern eCommerce admin panel. It should list each Batch, and underneath or beside it, a table or grid of the successfully categorized MediaItems (showing product name,  
+   format, genre, etc.). Include some basic Progress Tracking for each batch. Show a visual indicator or a fraction calculating how many items in that batch are filled out versus how many are     
+   still null/pending                                                                                                                                                                               
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+✦ I will start by researching the Batch and MediaItem models to understand their relationships and fields, and then I'll check the current web.php routes.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFolder app/Models                                                                                                                                                                     │
+│                                                                                                                                                                                              │
+│ Listed 3 item(s).                                                                                                                                                                            │
+│                                                                                                                                                                                              │
+│ ✓  ReadFile routes/web.php                                                                                                                                                                   │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will read the contents of the Batch and MediaItem models to verify their relationships and fillable fields.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile app/Models/Batch.php                                                                                                                                                             │
+│                                                                                                                                                                                              │
+│                                                                                                                                                                                              │
+│ ✓  ReadFile app/Models/MediaItem.php                                                                                                                                                         │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will create the DashboardController and implement the index method to fetch all batches and their related media items, ordered by the newest first.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  WriteFile Writing to app/.../DashboardController.php                                                                                                                                      │
+│                                                                                                                                                                                              │
+│  1 <?php                                                                                                                                                                                     │
+│  2                                                                                                                                                                                           │
+│  3 namespace App\Http\Controllers;                                                                                                                                                           │
+│  4                                                                                                                                                                                           │
+│  5 use App\Models\Batch;                                                                                                                                                                     │
+│  6 use Illuminate\View\View;                                                                                                                                                                 │
+│  7                                                                                                                                                                                           │
+│  8 class DashboardController extends Controller                                                                                                                                              │
+│  9 {                                                                                                                                                                                         │
+│ 10     /**                                                                                                                                                                                   │
+│ 11      * Display the media items results dashboard.                                                                                                                                         │
+│ 12      */                                                                                                                                                                                   │
+│ 13     public function index(): View                                                                                                                                                         │
+│ 14     {                                                                                                                                                                                     │
+│ 15         $batches = Batch::with('mediaItems')                                                                                                                                              │
+│ 16             ->latest()                                                                                                                                                                    │
+│ 17             ->get();                                                                                                                                                                      │
+│ 18                                                                                                                                                                                           │
+│ 19         return view('dashboard', compact('batches'));                                                                                                                                     │
+│ 20     }                                                                                                                                                                                     │
+│ 21 }                                                                                                                                                                                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will add the GET route for /dashboard to web.php, pointing it to the index method of the DashboardController.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit routes/web.php: <?php... => <?php...                                                                                                                                                 │
+│                                                                                                                                                                                              │
+│ 2                                                                                                                                                                                            │
+│ 3   use Illuminate\Support\Facades\Route;                                                                                                                                                    │
+│ 4   use App\Http\Controllers\MediaUploadController;                                                                                                                                          │
+│ 5 + use App\Http\Controllers\DashboardController;                                                                                                                                            │
+│ 6                                                                                                                                                                                            │
+│ 7   Route::get('/', [MediaUploadController::class, 'show'])->name('upload.show');                                                                                                            │
+│ 8   Route::post('/', [MediaUploadController::class, 'store'])->name('upload.store');                                                                                                         │
+│ 9 + Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');                                                                                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will read resources/views/upload.blade.php to check for any existing Tailwind CSS setup or layout patterns before creating the dashboard.blade.php view.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile resources/views/upload.blade.php                                                                                                                                                 │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will create resources/views/dashboard.blade.php with a modern admin panel design using Tailwind CSS, including sections for each batch, progress bars, and tables for media items.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  WriteFile Writing to resources/views/dashboard.blade.php                                                                                                                                  │
+│                                                                                                                                                                                              │
+│ ... first 56 lines hidden (Ctrl+O to show) ...                                                                                                                                               │
+│  57                                         </h2>                                                                                                                                            │
+│  58                                         <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">                                                                   │
+│  59                                             <div class="mt-2 flex items-center text-sm text-gray-500">                                                                                   │
+│  60                                                 <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">                           │
+│  61                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2  │
+│     2 0 00-2 2v12a2 2 0 002 2z" />                                                                                                                                                           │
+│  62                                                 </svg>                                                                                                                                   │
+│  63                                                 {{ $batch->created_at->format('M j, Y H:i') }}                                                                                           │
+│  64                                             </div>                                                                                                                                       │
+│  65                                             <div class="mt-2 flex items-center text-sm text-gray-500">                                                                                   │
+│  66                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $batch->status === 'completed' ? 'bg-green-100   │
+│     text-green-800' : 'bg-yellow-100 text-yellow-800' }}">                                                                                                                                   │
+│  67                                                     {{ ucfirst($batch->status) }}                                                                                                        │
+│  68                                                 </span>                                                                                                                                  │
+│  69                                             </div>                                                                                                                                       │
+│  70                                         </div>                                                                                                                                           │
+│  71                                     </div>                                                                                                                                               │
+│  72                                                                                                                                                                                          │
+│  73                                     <div class="mt-4 flex-shrink-0 md:mt-0 md:ml-4 w-48">                                                                                                │
+│  74                                         <div class="text-sm font-medium text-gray-700 mb-1 flex justify-between">                                                                        │
+│  75                                             <span>Progress</span>                                                                                                                        │
+│  76                                             <span>{{ $completedItems }}/{{ $totalItems }}</span>                                                                                         │
+│  77                                         </div>                                                                                                                                           │
+│  78                                         <div class="w-full bg-gray-200 rounded-full h-2.5">                                                                                              │
+│  79                                             <div class="bg-indigo-600 h-2.5 rounded-full" style="width: {{ $progress }}%"></div>                                                         │
+│  80                                         </div>                                                                                                                                           │
+│  81                                     </div>                                                                                                                                               │
+│  82                                 </div>                                                                                                                                                   │
+│  83                                                                                                                                                                                          │
+│  84                                 <div class="mt-6 flex flex-col">                                                                                                                         │
+│  85                                     <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">                                                                                                │
+│  86                                         <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">                                                                          │
+│  87                                             <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">                                                                  │
+│  88                                                 <table class="min-w-full divide-y divide-gray-200">                                                                                      │
+│  89                                                     <thead class="bg-gray-50">                                                                                                           │
+│  90                                                         <tr>                                                                                                                             │
+│  91                                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raw Input</th>        │
+│  92                                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>     │
+│  93                                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Format</th>           │
+│  94                                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Genre</th>            │
+│  95                                                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition</th>        │
+│  96                                                         </tr>                                                                                                                            │
+│  97                                                     </thead>                                                                                                                             │
+│  98                                                     <tbody class="bg-white divide-y divide-gray-200">                                                                                    │
+│  99                                                         @forelse ($batch->mediaItems as $item)                                                                                           │
+│ 100                                                             <tr>                                                                                                                         │
+│ 101                                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs" title="{{ $item->raw_data }}">           │
+│ 102                                                                     {{ $item->raw_data }}                                                                                                │
+│ 103                                                                 </td>                                                                                                                    │
+│ 104                                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">                                               │
+│ 105                                                                     {{ $item->product_name ?? '---' }}                                                                                   │
+│ 106                                                                 </td>                                                                                                                    │
+│ 107                                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">                                                           │
+│ 108                                                                     {{ $item->media_format ?? '---' }}                                                                                   │
+│ 109                                                                 </td>                                                                                                                    │
+│ 110                                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">                                                           │
+│ 111                                                                     {{ $item->genre ?? '---' }}                                                                                          │
+│ 112                                                                 </td>                                                                                                                    │
+│ 113                                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">                                                           │
+│ 114                                                                     {{ $item->condition ?? '---' }}                                                                                      │
+│ 115                                                                 </td>                                                                                                                    │
+│ 116                                                             </tr>                                                                                                                        │
+│ 117                                                         @empty                                                                                                                           │
+│ 118                                                             <tr>                                                                                                                         │
+│ 119                                                                 <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">                                   │
+│ 120                                                                     No items found in this batch.                                                                                        │
+│ 121                                                                 </td>                                                                                                                    │
+│ 122                                                             </tr>                                                                                                                        │
+│ 123                                                         @endforelse                                                                                                                      │
+│ 124                                                     </tbody>                                                                                                                             │
+│ 125                                                 </table>                                                                                                                                 │
+│ 126                                             </div>                                                                                                                                       │
+│ 127                                         </div>                                                                                                                                           │
+│ 128                                     </div>                                                                                                                                               │
+│ 129                                 </div>                                                                                                                                                   │
+│ 130                             </div>                                                                                                                                                       │
+│ 131                         </div>                                                                                                                                                           │
+│ 132                     @empty                                                                                                                                                               │
+│ 133                         <div class="text-center py-12">                                                                                                                                  │
+│ 134                             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">                                                          │
+│ 135                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0    │
+│     01-2-2z" />                                                                                                                                                                              │
+│ 136                             </svg>                                                                                                                                                       │
+│ 137                             <h3 class="mt-2 text-sm font-medium text-gray-900">No batches processed</h3>                                                                                 │
+│ 138                             <p class="mt-1 text-sm text-gray-500">Get started by ingesting some media data.</p>                                                                          │
+│ 139                             <div class="mt-6">                                                                                                                                           │
+│ 140                                 <a href="{{ route('upload.show') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md        │
+│     text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">                                                                 │
+│ 141                                     Go to Ingest                                                                                                                                         │
+│ 142                                 </a>                                                                                                                                                     │
+│ 143                             </div>                                                                                                                                                       │
+│ 144                         </div>                                                                                                                                                           │
+│ 145                     @endforelse                                                                                                                                                          │
+│ 146                 </div>                                                                                                                                                                   │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will update resources/views/upload.blade.php to include a link to the dashboard, ensuring better navigation between the ingestion and results pages.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit resources/views/upload.blade.php: <!DOCTYPE html>... => <!DOCTYPE html>...                                                                                                           │
+│                                                                                                                                                                                              │
+│  7       <script src="https://cdn.tailwindcss.com"></script>                                                                                                                                 │
+│  8   </head>                                                                                                                                                                                 │
+│  9   <body class="bg-gray-100 min-h-screen p-8">                                                                                                                                             │
+│ 10 +     <div class="max-w-2xl mx-auto mb-4 text-right">                                                                                                                                     │
+│ 11 +         <a href="{{ route('dashboard') }}" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm">View Dashboard →</a>                                                       │
+│ 12 +     </div>                                                                                                                                                                              │
+│ 13       <div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">                                                                                                                   │
+│ 14           <h1 class="text-2xl font-bold mb-6 text-gray-800">MediaVault Data Ingestion</h1>                                                                                                │
+│ 15                                                                                                                                                                                           │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I have built the Tailwind CSS Dashboard for MediaVault.
+
+   1. DashboardController: Created app/Http/Controllers/DashboardController.php with an index method that fetches all Batch records and their related MediaItem records, ordered by the newest
+      first.
+   2. Route: Added a GET route for /dashboard in routes/web.php.
+   3. View: Created a polished Tailwind CSS dashboard at resources/views/dashboard.blade.php. It features:
+       * A modern admin panel design with a clean navigation bar.
+       * Batch-level grouping with status indicators and timestamps.
+       * Progress Tracking: Each batch displays a visual progress bar and a fraction (e.g., 5/10) representing how many items have been successfully processed (filled out) vs. pending.
+       * A detailed table for each batch showing the raw input alongside the categorized data (Product Name, Format, Genre, Condition).
+   4. Navigation: Added a "View Dashboard" link to the upload.blade.php view for seamless navigation between ingestion and results.
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+ > currently there is no artist column for each media item in the dashboard, update dashboard.blade.php to include an 'Artist/Director' column in the table headers and data rows                   
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+✦ I will read the resources/views/dashboard.blade.php file and then update the table header and body to include the "Artist/Director" column.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile resources/views/dashboard.blade.php                                                                                                                                              │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will update the resources/views/dashboard.blade.php file by adding the "Artist/Director" column to both the table headers and the data rows.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit resources/views/dashboard.blade.php: <!DOCTYPE html>... => <!DOCTYPE html>...                                                                                                        │
+│                                                                                                                                                                                              │
+│ 90   <tr>                                                                                                                                                                                    │
+│ 91       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raw Input</th>                                                               │
+│ 92       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>                                                            │
+│ 93 +     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artist/Director</th>                                                         │
+│ 94       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Format</th>                                                                  │
+│ 95       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Genre</th>                                                                   │
+│ 96       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition</th>                                                               │
+│                                                                                                                                                                                              │
+│ ✓  Edit resources/views/dashboard.blade.php: <!DOCTYPE html>... => <!DOCTYPE html>...                                                                                                        │
+│                                                                                                                                                                                              │
+│ 106       {{ $item->product_name ?? '---' }}                                                                                                                                                 │
+│ 107   </td>                                                                                                                                                                                  │
+│ 108   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">                                                                                                                         │
+│ 109 +     {{ $item->artist_or_director ?? '---' }}                                                                                                                                           │
+│ 110 + </td>                                                                                                                                                                                  │
+│ 111 + <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">                                                                                                                         │
+│ 112       {{ $item->media_format ?? '---' }}                                                                                                                                                 │
+│ 113   </td>                                                                                                                                                                                  │
+│ 114   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">                                                                                                                         │
+│                                                                                                                                                                                              │
+│ ✓  Edit resources/views/dashboard.blade.php: <!DOCTYPE html>... => <!DOCTYPE html>...                                                                                                        │
+│                                                                                                                                                                                              │
+│ 120       </tr>                                                                                                                                                                              │
+│ 121   @empty                                                                                                                                                                                 │
+│ 122       <tr>                                                                                                                                                                               │
+│ 123 -         <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">                                                                                         │
+│ 123 +         <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">                                                                                         │
+│ 124               No items found in this batch.                                                                                                                                              │
+│ 125           </td>                                                                                                                                                                          │
+│ 126       </tr>                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I have updated dashboard.blade.php to include the Artist/Director column.
+
+   1. Table Header: Added <th scope="col" ...>Artist/Director</th> between "Product Name" and "Format".
+   2. Table Body: Added <td ...>{{ $item->artist_or_director ?? '---' }}</td> to the data rows.
+   3. Empty State: Updated the colspan for the "No items found" message to 6 to maintain proper alignment.
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+ > at the moment a batch that is completed is still marked as pending. add logic in CategorizeMediaJob.php to check if all MediaItems belonging to this specific Batch have been successfully       
+   processed (you could maybe check if the updated_at timestamp differs from the created_at timestamp for all items in the batch). if all items are processed, update the batch model's status from 
+   'pending' to 'completed'                                                                                                                                                                         
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+✦ I will read the app/Jobs/CategorizeMediaJob.php file to understand the current implementation.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile app/Jobs/CategorizeMediaJob.php                                                                                                                                                  │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will read the migration file for the media_items table to check the available fields and their default values.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile database/migrati..._items_table.php                                                                                                                                              │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will update the handle method in app/Jobs/CategorizeMediaJob.php to check if all MediaItem records in the batch have been processed, and if so, update the batch status to 'completed'.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit app/Jobs/CategorizeMediaJob.php: <?php... => <?php...                                                                                                                                │
+│                                                                                                                                                                                              │
+│ 52           'genre' => $structuredData['genre'] ?? null,                                                                                                                                    │
+│ 53           'condition' => $structuredData['condition'] ?? null,                                                                                                                            │
+│ 54       ]);                                                                                                                                                                                 │
+│ 55 +                                                                                                                                                                                         │
+│ 56 +     $batch = $this->mediaItem->batch;                                                                                                                                                   │
+│ 57 +                                                                                                                                                                                         │
+│ 58 +     if ($batch) {                                                                                                                                                                       │
+│ 59 +         // Check if all items in the batch have been processed.                                                                                                                         │
+│ 60 +         // Items are considered processed if their updated_at timestamp differs from created_at.                                                                                        │
+│ 61 +         $allProcessed = $batch->mediaItems()                                                                                                                                            │
+│ 62 +             ->whereColumn('updated_at', '=', 'created_at')                                                                                                                              │
+│ 63 +             ->count() === 0;                                                                                                                                                            │
+│ 64 +                                                                                                                                                                                         │
+│ 65 +         if ($allProcessed) {                                                                                                                                                            │
+│ 66 +             $batch->update(['status' => 'completed']);                                                                                                                                  │
+│ 67 +         }                                                                                                                                                                               │
+│ 68 +     }                                                                                                                                                                                   │
+│ 69   }                                                                                                                                                                                       │
+│ 70                                                                                                                                                                                           │
+│ 71   /**                                                                                                                                                                                     │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I have updated CategorizeMediaJob.php to include the logic for marking a batch as completed.
+
+  Changes:
+   - In the handle() method, after a MediaItem is successfully updated, the job now checks the parent Batch.
+   - It performs a count on the batch's mediaItems where the updated_at column still equals the created_at column.
+   - If the count is 0, it means all items in that batch have been processed, and the batch status is updated to 'completed'.
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+ > at the moment the dashboard is static. update DashboardController to include a method that returns the dashboard data as JSON. then implement a polling mechanism (using JavaScript or AlpineJS) 
+   in dashboard.blade.php that fetches this JSON every 3 seconds. use this data to dynamically update the progress bars, batch statuses, and table rows without requiring a manual page refresh     
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+✦ I will update DashboardController.php to add a data method that returns the batches and their media items as JSON, and then I'll add a corresponding route in web.php.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit app/.../DashboardController.php: <?php... => <?php...                                                                                                                                │
+│                                                                                                                                                                                              │
+│  3   namespace App\Http\Controllers;                                                                                                                                                         │
+│  4                                                                                                                                                                                           │
+│  5   use App\Models\Batch;                                                                                                                                                                   │
+│  6 + use Illuminate\Http\JsonResponse;                                                                                                                                                       │
+│  7   use Illuminate\View\View;                                                                                                                                                               │
+│  8                                                                                                                                                                                           │
+│  9   class DashboardController extends Controller                                                                                                                                            │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│ 19                                                                                                                                                                                           │
+│ 20           return view('dashboard', compact('batches'));                                                                                                                                   │
+│ 21       }                                                                                                                                                                                   │
+│ 22 +                                                                                                                                                                                         │
+│ 23 +     /**                                                                                                                                                                                 │
+│ 24 +      * Get the dashboard data as JSON.                                                                                                                                                  │
+│ 25 +      */                                                                                                                                                                                 │
+│ 26 +     public function data(): JsonResponse                                                                                                                                                │
+│ 27 +     {                                                                                                                                                                                   │
+│ 28 +         $batches = Batch::with('mediaItems')                                                                                                                                            │
+│ 29 +             ->latest()                                                                                                                                                                  │
+│ 30 +             ->get();                                                                                                                                                                    │
+│ 31 +                                                                                                                                                                                         │
+│ 32 +         return response()->json([                                                                                                                                                       │
+│ 33 +             'batches' => $batches                                                                                                                                                       │
+│ 34 +         ]);                                                                                                                                                                             │
+│ 35 +     }                                                                                                                                                                                   │
+│ 36   }                                                                                                                                                                                       │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will add the /dashboard/data route to web.php and then update dashboard.blade.php to include Alpine.js for polling and dynamic UI updates.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit routes/web.php: <?php... => <?php...                                                                                                                                                 │
+│                                                                                                                                                                                              │
+│  7   Route::get('/', [MediaUploadController::class, 'show'])->name('upload.show');                                                                                                           │
+│  8   Route::post('/', [MediaUploadController::class, 'store'])->name('upload.store');                                                                                                        │
+│  9   Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');                                                                                                     │
+│ 10 + Route::get('/dashboard/data', [DashboardController::class, 'data'])->name('dashboard.data');                                                                                            │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will rewrite dashboard.blade.php to include Alpine.js, enabling a polling mechanism that updates the UI every 3 seconds.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  WriteFile Writing to resources/views/dashboard.blade.php                                                                                                                                  │
+│                                                                                                                                                                                              │
+│   5       <meta name="viewport" content="width=device-width, initial-scale=1.0">                                                                                                             │
+│   6       <title>MediaVault - Dashboard</title>                                                                                                                                              │
+│   7       <script src="https://cdn.tailwindcss.com"></script>                                                                                                                                │
+│   8 +     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>                                                                                                     │
+│   9       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">                                                                    │
+│  10       <style>                                                                                                                                                                            │
+│  11           body { font-family: 'Inter', sans-serif; }                                                                                                                                     │
+│  12       </style>                                                                                                                                                                           │
+│  13   </head>                                                                                                                                                                                │
+│  13 - <body class="bg-gray-50 min-h-screen">                                                                                                                                                 │
+│  14 + <body class="bg-gray-50 min-h-screen" x-data="dashboard()" x-init="initPolling()">                                                                                                     │
+│  15       <!-- Navigation -->                                                                                                                                                                │
+│  16       <nav class="bg-white border-b border-gray-200">                                                                                                                                    │
+│  17           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">                                                                                                                           │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│  35                                                                                                                                                                                          │
+│  36       <div class="py-10">                                                                                                                                                                │
+│  37           <header>                                                                                                                                                                       │
+│  37 -             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">                                                                                                                       │
+│  38 +             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">                                                                                     │
+│  39                   <h1 class="text-3xl font-bold leading-tight text-gray-900">Processing Results</h1>                                                                                     │
+│  40 +                 <div class="flex items-center space-x-2 text-sm text-gray-500">                                                                                                        │
+│  41 +                     <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>                                                                                                │
+│  42 +                     <span>Live Updates On</span>                                                                                                                                       │
+│  43 +                 </div>                                                                                                                                                                 │
+│  44               </div>                                                                                                                                                                     │
+│  45           </header>                                                                                                                                                                      │
+│  46           <main>                                                                                                                                                                         │
+│  47               <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">                                                                                                                            │
+│  48                   <div class="px-4 py-8 sm:px-0">                                                                                                                                        │
+│  44 -                     @forelse ($batches as $batch)                                                                                                                                      │
+│  45 -                         @php                                                                                                                                                           │
+│  46 -                             $totalItems = $batch->mediaItems->count();                                                                                                                 │
+│  47 -                             $completedItems = $batch->mediaItems->whereNotNull('product_name')->count();                                                                               │
+│  48 -                             $progress = $totalItems > 0 ? round(($completedItems / $totalItems) * 100) : 0;                                                                            │
+│  49 -                         @endphp                                                                                                                                                        │
+│  49 +                     <template x-if="batches.length === 0">                                                                                                                             │
+│  50 +                         <div class="text-center py-12">                                                                                                                                │
+│  51 +                             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">                                                        │
+│  52 +                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0  │
+│     01-2-2z" />                                                                                                                                                                              │
+│  53 +                             </svg>                                                                                                                                                     │
+│  54 +                             <h3 class="mt-2 text-sm font-medium text-gray-900">No batches processed</h3>                                                                               │
+│  55 +                             <p class="mt-1 text-sm text-gray-500">Get started by ingesting some media data.</p>                                                                        │
+│  56 +                             <div class="mt-6">                                                                                                                                         │
+│  57 +                                 <a href="{{ route('upload.show') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md      │
+│     text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">                                                                 │
+│  58 +                                     Go to Ingest                                                                                                                                       │
+│  59 +                                 </a>                                                                                                                                                   │
+│  60 +                             </div>                                                                                                                                                     │
+│  61 +                         </div>                                                                                                                                                         │
+│  62 +                     </template>                                                                                                                                                        │
+│  63                                                                                                                                                                                          │
+│  64 +                     <template x-for="batch in batches" :key="batch.id">                                                                                                                │
+│  65                           <div class="bg-white overflow-hidden shadow rounded-lg mb-8">                                                                                                  │
+│  66                               <div class="px-4 py-5 sm:p-6">                                                                                                                             │
+│  67                                   <div class="md:flex md:items-center md:justify-between mb-4">                                                                                          │
+│  68                                       <div class="flex-1 min-w-0">                                                                                                                       │
+│  69                                           <h2 class="text-xl font-bold leading-7 text-gray-900 sm:text-2xl sm:truncate">                                                                 │
+│  56 -                                             Batch #{{ $batch->id }} - {{ $batch->original_filename ?? 'Raw Text Input' }}                                                              │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│  70 +                                             Batch #<span x-text="batch.id"></span> - <span x-text="batch.original_filename || 'Raw Text Input'"></span>                                │
+│  71                                           </h2>                                                                                                                                          │
+│  72                                           <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">                                                                 │
+│  73                                               <div class="mt-2 flex items-center text-sm text-gray-500">                                                                                 │
+│  74                                                   <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">                         │
+│  75                                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 │
+│      2 0 00-2 2v12a2 2 0 002 2z" />                                                                                                                                                          │
+│  76                                                   </svg>                                                                                                                                 │
+│  63 -                                                 {{ $batch->created_at->format('M j, Y H:i') }}                                                                                         │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│  77 +                                                 <span x-text="formatDate(batch.created_at)"></span>                                                                                    │
+│  78                                               </div>                                                                                                                                     │
+│  79                                               <div class="mt-2 flex items-center text-sm text-gray-500">                                                                                 │
+│  66 -                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $batch->status === 'completed' ? 'bg-green-100 │
+│     text-green-800' : 'bg-yellow-100 text-yellow-800' }}">                                                                                                                                   │
+│  67 -                                                     {{ ucfirst($batch->status) }}                                                                                                      │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│  80 +                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"                                                  │
+│  81 +                                                       :class="batch.status === 'completed' ? 'bg-green-100 text-green-800' : (batch.status === 'failed' ? 'bg-red-100 text-red-800' :  │
+│     'bg-yellow-100 text-yellow-800')"                                                                                                                                                        │
+│  82 +                                                       x-text="batch.status.charAt(0).toUpperCase() + batch.status.slice(1)">                                                           │
+│  83                                                   </span>                                                                                                                                │
+│  84                                               </div>                                                                                                                                     │
+│  85                                           </div>                                                                                                                                         │
+│  88                                       <div class="mt-4 flex-shrink-0 md:mt-0 md:ml-4 w-48">                                                                                              │
+│  89                                           <div class="text-sm font-medium text-gray-700 mb-1 flex justify-between">                                                                      │
+│  90                                               <span>Progress</span>                                                                                                                      │
+│  76 -                                             <span>{{ $completedItems }}/{{ $totalItems }}</span>                                                                                       │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│  91 +                                             <span x-text="getBatchProgressText(batch)"></span>                                                                                         │
+│  92                                           </div>                                                                                                                                         │
+│  93                                           <div class="w-full bg-gray-200 rounded-full h-2.5">                                                                                            │
+│  79 -                                             <div class="bg-indigo-600 h-2.5 rounded-full" style="width: {{ $progress }}%"></div>                                                       │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I have updated the dashboard to support live, dynamic updates using Alpine.js and a polling mechanism.
+
+  Changes:
+
+   1. DashboardController: Added a data() method that returns all batches and their media items as a JSON response.
+   2. Routes: Registered a new GET route /dashboard/data (named dashboard.data) pointing to the new controller method.
+   3. Dashboard View:
+       * Alpine.js Integration: Added Alpine.js to handle the state and reactivity.
+       * Polling Logic: Implemented an initPolling function that fetches the latest data from /dashboard/data every 3 seconds.
+       * Dynamic UI: 
+           * Converted the static Blade loops (@forelse) into Alpine.js templates (<template x-for="...">).
+           * Progress bars now use transition-all duration-500 for smooth animation as items are processed.
+           * Batch statuses and progress text (X/Y) update automatically.
+           * The media items table for each batch updates in real-time as background jobs complete.
+           * Added a "Live Updates On" indicator with a pulsing green light to signify the active connection.
+
+  The dashboard now provides a "live" experience, reflecting the progress of background media enrichment without requiring manual page refreshes.
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+ > currently the navigation is inconsistent between the two pages. The dashboard.blade.php has a nice top navigation bar, but upload.blade.php is missing it entirely. refactor the frontend to use 
+   Laravel Blade layouts. create a base layout file at resources/views/layouts/app.blade.php.extract the top navigation bar (with the MediaVault logo, 'Ingest' and 'Dashboard' links) and the base 
+   HTML structure from dashboard.blade.php into this new layout file. refactor both dashboard.blade.php and upload.blade.php to extend this new layout using @extends('layouts.app') and            
+   @section('content'). make sure both pages look unified and ensure the active state on the navigation links works correctly depending on which route we are on                                    
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+✦ I will read the resources/views/dashboard.blade.php file to extract the base HTML structure and navigation bar for the new layout.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile resources/views/dashboard.blade.php                                                                                                                                              │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will create the resources/views/layouts/app.blade.php file, which will serve as the base layout with the unified navigation bar and HTML structure.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  WriteFile Writing to resources/.../layouts/app.blade.php                                                                                                                                  │
+│                                                                                                                                                                                              │
+│  1 <!DOCTYPE html>                                                                                                                                                                           │
+│  2 <html lang="en">                                                                                                                                                                          │
+│  3 <head>                                                                                                                                                                                    │
+│  4     <meta charset="UTF-8">                                                                                                                                                                │
+│  5     <meta name="viewport" content="width=device-width, initial-scale=1.0">                                                                                                                │
+│  6     <title>MediaVault - @yield('title', 'Data Ingestion')</title>                                                                                                                         │
+│  7     <script src="https://cdn.tailwindcss.com"></script>                                                                                                                                   │
+│  8     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>                                                                                                        │
+│  9     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">                                                                       │
+│ 10     <style>                                                                                                                                                                               │
+│ 11         body { font-family: 'Inter', sans-serif; }                                                                                                                                        │
+│ 12     </style>                                                                                                                                                                              │
+│ 13     @stack('styles')                                                                                                                                                                      │
+│ 14 </head>                                                                                                                                                                                   │
+│ 15 <body class="bg-gray-50 min-h-screen" @yield('body-attributes')>                                                                                                                          │
+│ 16     <!-- Navigation -->                                                                                                                                                                   │
+│ 17     <nav class="bg-white border-b border-gray-200">                                                                                                                                       │
+│ 18         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">                                                                                                                              │
+│ 19             <div class="flex justify-between h-16">                                                                                                                                       │
+│ 20                 <div class="flex">                                                                                                                                                        │
+│ 21                     <div class="flex-shrink-0 flex items-center">                                                                                                                         │
+│ 22                         <span class="text-2xl font-bold text-indigo-600">MediaVault</span>                                                                                                │
+│ 23                     </div>                                                                                                                                                                │
+│ 24                     <div class="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">                                                                                                           │
+│ 25                         <a href="{{ route('upload.show') }}"                                                                                                                              │
+│ 26                            class="{{ request()->routeIs('upload.show') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' │
+│    }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">                                                                                                                    │
+│ 27                             Ingest                                                                                                                                                        │
+│ 28                         </a>                                                                                                                                                              │
+│ 29                         <a href="{{ route('dashboard') }}"                                                                                                                                │
+│ 30                            class="{{ request()->routeIs('dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'   │
+│    }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">                                                                                                                    │
+│ 31                             Dashboard                                                                                                                                                     │
+│ 32                         </a>                                                                                                                                                              │
+│ 33                     </div>                                                                                                                                                                │
+│ 34                 </div>                                                                                                                                                                    │
+│ 35             </div>                                                                                                                                                                        │
+│ 36         </div>                                                                                                                                                                            │
+│ 37     </nav>                                                                                                                                                                                │
+│ 38                                                                                                                                                                                           │
+│ 39     <div class="py-10">                                                                                                                                                                   │
+│ 40         @yield('content')                                                                                                                                                                 │
+│ 41     </div>                                                                                                                                                                                │
+│ 42                                                                                                                                                                                           │
+│ 43     @stack('scripts')                                                                                                                                                                     │
+│ 44 </body>                                                                                                                                                                                   │
+│ 45 </html>                                                                                                                                                                                   │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will refactor dashboard.blade.php to extend the new base layout and use the @section('content') and @stack('scripts') directives.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  WriteFile Writing to resources/views/dashboard.blade.php                                                                                                                                  │
+│                                                                                                                                                                                              │
+│   1 - <!DOCTYPE html>                                                                                                                                                                        │
+│   2 - <html lang="en">                                                                                                                                                                       │
+│   3 - <head>                                                                                                                                                                                 │
+│   4 -     <meta charset="UTF-8">                                                                                                                                                             │
+│   5 -     <meta name="viewport" content="width=device-width, initial-scale=1.0">                                                                                                             │
+│   6 -     <title>MediaVault - Dashboard</title>                                                                                                                                              │
+│   7 -     <script src="https://cdn.tailwindcss.com"></script>                                                                                                                                │
+│   8 -     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>                                                                                                     │
+│   9 -     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">                                                                    │
+│  10 -     <style>                                                                                                                                                                            │
+│  11 -         body { font-family: 'Inter', sans-serif; }                                                                                                                                     │
+│  12 -     </style>                                                                                                                                                                           │
+│  13 - </head>                                                                                                                                                                                │
+│  14 - <body class="bg-gray-50 min-h-screen" x-data="dashboard()" x-init="initPolling()">                                                                                                     │
+│  15 -     <!-- Navigation -->                                                                                                                                                                │
+│  16 -     <nav class="bg-white border-b border-gray-200">                                                                                                                                    │
+│  17 -         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">                                                                                                                           │
+│  18 -             <div class="flex justify-between h-16">                                                                                                                                    │
+│  19 -                 <div class="flex">                                                                                                                                                     │
+│  20 -                     <div class="flex-shrink-0 flex items-center">                                                                                                                      │
+│  21 -                         <span class="text-2xl font-bold text-indigo-600">MediaVault</span>                                                                                             │
+│  22 -                     </div>                                                                                                                                                             │
+│  23 -                     <div class="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">                                                                                                        │
+│  24 -                         <a href="{{ route('upload.show') }}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1      │
+│     border-b-2 text-sm font-medium">                                                                                                                                                         │
+│  25 -                             Ingest                                                                                                                                                     │
+│  26 -                         </a>                                                                                                                                                           │
+│  27 -                         <a href="{{ route('dashboard') }}" class="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">                  │
+│  28 -                             Dashboard                                                                                                                                                  │
+│  29 -                         </a>                                                                                                                                                           │
+│  30 -                     </div>                                                                                                                                                             │
+│  31 -                 </div>                                                                                                                                                                 │
+│  32 -             </div>                                                                                                                                                                     │
+│  33 -         </div>                                                                                                                                                                         │
+│  34 -     </nav>                                                                                                                                                                             │
+│   1 + @extends('layouts.app')                                                                                                                                                                │
+│   2                                                                                                                                                                                          │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│  36 -     <div class="py-10">                                                                                                                                                                │
+│  37 -         <header>                                                                                                                                                                       │
+│  38 -             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">                                                                                     │
+│  39 -                 <h1 class="text-3xl font-bold leading-tight text-gray-900">Processing Results</h1>                                                                                     │
+│  40 -                 <div class="flex items-center space-x-2 text-sm text-gray-500">                                                                                                        │
+│  41 -                     <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>                                                                                                │
+│  42 -                     <span>Live Updates On</span>                                                                                                                                       │
+│  43 -                 </div>                                                                                                                                                                 │
+│   3 + @section('title', 'Dashboard')                                                                                                                                                         │
+│   4 +                                                                                                                                                                                        │
+│   5 + @section('body-attributes')                                                                                                                                                            │
+│   6 +     x-data="dashboard()" x-init="initPolling()"                                                                                                                                        │
+│   7 + @endsection                                                                                                                                                                            │
+│   8 +                                                                                                                                                                                        │
+│   9 + @section('content')                                                                                                                                                                    │
+│  10 +     <header>                                                                                                                                                                           │
+│  11 +         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">                                                                                         │
+│  12 +             <h1 class="text-3xl font-bold leading-tight text-gray-900">Processing Results</h1>                                                                                         │
+│  13 +             <div class="flex items-center space-x-2 text-sm text-gray-500">                                                                                                            │
+│  14 +                 <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>                                                                                                    │
+│  15 +                 <span>Live Updates On</span>                                                                                                                                           │
+│  16               </div>                                                                                                                                                                     │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│  45 -         </header>                                                                                                                                                                      │
+│  46 -         <main>                                                                                                                                                                         │
+│  47 -             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">                                                                                                                            │
+│  48 -                 <div class="px-4 py-8 sm:px-0">                                                                                                                                        │
+│  49 -                     <template x-if="batches.length === 0">                                                                                                                             │
+│  50 -                         <div class="text-center py-12">                                                                                                                                │
+│  51 -                             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">                                                        │
+│  52 -                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0  │
+│     01-2-2z" />                                                                                                                                                                              │
+│  53 -                             </svg>                                                                                                                                                     │
+│  54 -                             <h3 class="mt-2 text-sm font-medium text-gray-900">No batches processed</h3>                                                                               │
+│  55 -                             <p class="mt-1 text-sm text-gray-500">Get started by ingesting some media data.</p>                                                                        │
+│  56 -                             <div class="mt-6">                                                                                                                                         │
+│  57 -                                 <a href="{{ route('upload.show') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md      │
+│     text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">                                                                 │
+│  58 -                                     Go to Ingest                                                                                                                                       │
+│  59 -                                 </a>                                                                                                                                                   │
+│  60 -                             </div>                                                                                                                                                     │
+│  17 +         </div>                                                                                                                                                                         │
+│  18 +     </header>                                                                                                                                                                          │
+│  19 +     <main>                                                                                                                                                                             │
+│  20 +         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">                                                                                                                                │
+│  21 +             <div class="px-4 py-8 sm:px-0">                                                                                                                                            │
+│  22 +                 <template x-if="batches.length === 0">                                                                                                                                 │
+│  23 +                     <div class="text-center py-12">                                                                                                                                    │
+│  24 +                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">                                                            │
+│  25 +                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0      │
+│     01-2-2z" />                                                                                                                                                                              │
+│  26 +                         </svg>                                                                                                                                                         │
+│  27 +                         <h3 class="mt-2 text-sm font-medium text-gray-900">No batches processed</h3>                                                                                   │
+│  28 +                         <p class="mt-1 text-sm text-gray-500">Get started by ingesting some media data.</p>                                                                            │
+│  29 +                         <div class="mt-6">                                                                                                                                             │
+│  30 +                             <a href="{{ route('upload.show') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md          │
+│     text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">                                                                 │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will refactor upload.blade.php to extend the base layout and use the @section('content') directive.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  WriteFile Writing to resources/views/upload.blade.php                                                                                                                                     │
+│                                                                                                                                                                                              │
+│  1 - <!DOCTYPE html>                                                                                                                                                                         │
+│  2 - <html lang="en">                                                                                                                                                                        │
+│  3 - <head>                                                                                                                                                                                  │
+│  4 -     <meta charset="UTF-8">                                                                                                                                                              │
+│  5 -     <meta name="viewport" content="width=device-width, initial-scale=1.0">                                                                                                              │
+│  6 -     <title>MediaVault - Data Ingestion</title>                                                                                                                                          │
+│  7 -     <script src="https://cdn.tailwindcss.com"></script>                                                                                                                                 │
+│  8 - </head>                                                                                                                                                                                 │
+│  9 - <body class="bg-gray-100 min-h-screen p-8">                                                                                                                                             │
+│ 10 -     <div class="max-w-2xl mx-auto mb-4 text-right">                                                                                                                                     │
+│ 11 -         <a href="{{ route('dashboard') }}" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm">View Dashboard →</a>                                                       │
+│ 12 -     </div>                                                                                                                                                                              │
+│  1 + @extends('layouts.app')                                                                                                                                                                 │
+│  2 +                                                                                                                                                                                         │
+│  3 + @section('title', 'Data Ingestion')                                                                                                                                                     │
+│  4 +                                                                                                                                                                                         │
+│  5 + @section('content')                                                                                                                                                                     │
+│  6       <div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">                                                                                                                   │
+│  7           <h1 class="text-2xl font-bold mb-6 text-gray-800">MediaVault Data Ingestion</h1>                                                                                                │
+│  8                                                                                                                                                                                           │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│ 57               </div>                                                                                                                                                                      │
+│ 58           </form>                                                                                                                                                                         │
+│ 59       </div>                                                                                                                                                                              │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│ 67 - </body>                                                                                                                                                                                 │
+│ 68 - </html>                                                                                                                                                                                 │
+│ 60 + @endsection                                                                                                                                                                             │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I have refactored the frontend to use a unified Blade layout.
+
+  Changes:
+
+   1. Base Layout: Created resources/views/layouts/app.blade.php.
+       * Contains the core HTML5 boilerplate, Tailwind CSS, Alpine.js, and Inter font.
+       * Features a unified navigation bar with the MediaVault logo and links to "Ingest" and "Dashboard".
+       * Includes active state logic using request()->routeIs(...) to highlight the current page.
+       * Uses @yield('content') for page-specific content and @stack('scripts') for page-specific JavaScript.
+   2. Dashboard Refactor: Updated resources/views/dashboard.blade.php.
+       * Extends the new layouts.app layout.
+       * Uses @section('body-attributes') to inject the Alpine.js state and initialization into the layout's <body> tag.
+       * Cleaned up the file by removing redundant HTML structure and navigation.
+   3. Upload Refactor: Updated resources/views/upload.blade.php.
+       * Extends the new layouts.app layout.
+       * Removed the redundant "View Dashboard" link, as it's now part of the global navigation bar.
+       * Ensured the design is consistent with the rest of the application.
+
+  Both pages now share a consistent look and feel with a functioning top navigation bar.
