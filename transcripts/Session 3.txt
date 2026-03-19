@@ -1,0 +1,300 @@
+> now generate a Queued Job called CategorizeMediaJob. It needs to accept a MediaItem Eloquent model in its constructor. inside the handle() method, use Dependency Injection to pull in the       
+   MediaEnrichmentService we just made.pass the MediaItem's raw_data string into the service.when the service returns the structured array, update the MediaItem model with the new data and save   
+   it to the database. this job must implement the ShouldQueue interface, you must include a failed(\Throwable $exception) method. This method should update the associated Batch status to         
+   'failed' and log the exact reason if the job crashes (for example if we hit a Gemini API rate limit or get malformed JSON back)                                                                  
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+✦ I will start by researching the MediaItem and Batch models, as well as the MediaEnrichmentService, to ensure I have the correct attributes and method names for the new job.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile app/Models/MediaItem.php                                                                                                                                                         │
+│                                                                                                                                                                                              │
+│                                                                                                                                                                                              │
+│ ✓  ReadFile app/Models/Batch.php                                                                                                                                                             │
+│                                                                                                                                                                                              │
+│                                                                                                                                                                                              │
+│ ✓  ReadFile app/.../MediaEnrichmentService.php                                                                                                                                               │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile app/Models/MediaItem.php                                                                                                                                                         │
+│                                                                                                                                                                                              │
+│                                                                                                                                                                                              │
+│ ✓  ReadFile app/Models/Batch.php                                                                                                                                                             │
+│                                                                                                                                                                                              │
+✦ I will now check if the app/Jobs directory exists and then create the CategorizeMediaJob file with the required implementation.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell mkdir -p app/Jobs [current working directory /home/gerb/Projects/media-vault-laravel] (Ensure the app/Jobs directory exists.)                                                       │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will now create the CategorizeMediaJob class, implementing the required logic for processing media items and handling potential failures.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  WriteFile Writing to app/Jobs/CategorizeMediaJob.php                                                                                                                                      │
+│                                                                                                                                                                                              │
+│  1 <?php                                                                                                                                                                                     │
+│  2                                                                                                                                                                                           │
+│  3 declare(strict_types=1);                                                                                                                                                                  │
+│  4                                                                                                                                                                                           │
+│  5 namespace App\Jobs;                                                                                                                                                                       │
+│  6                                                                                                                                                                                           │
+│  7 use App\Models\MediaItem;                                                                                                                                                                 │
+│  8 use App\Services\MediaEnrichmentService;                                                                                                                                                  │
+│  9 use Illuminate\Bus\Queueable;                                                                                                                                                             │
+│ 10 use Illuminate\Contracts\Queue\ShouldQueue;                                                                                                                                               │
+│ 11 use Illuminate\Foundation\Bus\Dispatchable;                                                                                                                                               │
+│ 12 use Illuminate\Queue\InteractsWithQueue;                                                                                                                                                  │
+│ 13 use Illuminate\Queue\SerializesModels;                                                                                                                                                    │
+│ 14 use Illuminate\Support\Facades\Log;                                                                                                                                                       │
+│ 15 use Throwable;                                                                                                                                                                            │
+│ 16                                                                                                                                                                                           │
+│ 17 class CategorizeMediaJob implements ShouldQueue                                                                                                                                           │
+│ 18 {                                                                                                                                                                                         │
+│ 19     use Dispatchable;                                                                                                                                                                     │
+│ 20     use InteractsWithQueue;                                                                                                                                                               │
+│ 21     use Queueable;                                                                                                                                                                        │
+│ 22     use SerializesModels;                                                                                                                                                                 │
+│ 23                                                                                                                                                                                           │
+│ 24     /**                                                                                                                                                                                   │
+│ 25      * The MediaItem instance.                                                                                                                                                            │
+│ 26      */                                                                                                                                                                                   │
+│ 27     protected MediaItem $mediaItem;                                                                                                                                                       │
+│ 28                                                                                                                                                                                           │
+│ 29     /**                                                                                                                                                                                   │
+│ 30      * Create a new job instance.                                                                                                                                                         │
+│ 31      */                                                                                                                                                                                   │
+│ 32     public function __construct(MediaItem $mediaItem)                                                                                                                                     │
+│ 33     {                                                                                                                                                                                     │
+│ 34         $this->mediaItem = $mediaItem;                                                                                                                                                    │
+│ 35     }                                                                                                                                                                                     │
+│ 36                                                                                                                                                                                           │
+│ 37     /**                                                                                                                                                                                   │
+│ 38      * Execute the job.                                                                                                                                                                   │
+│ 39      */                                                                                                                                                                                   │
+│ 40     public function handle(MediaEnrichmentService $service): void                                                                                                                         │
+│ 41     {                                                                                                                                                                                     │
+│ 42         $structuredData = $service->enrich($this->mediaItem->raw_data);                                                                                                                   │
+│ 43                                                                                                                                                                                           │
+│ 44         if ($structuredData === null) {                                                                                                                                                   │
+│ 45             throw new \RuntimeException('Failed to enrich media item data via Gemini API.');                                                                                              │
+│ 46         }                                                                                                                                                                                 │
+│ 47                                                                                                                                                                                           │
+│ 48         $this->mediaItem->update([                                                                                                                                                        │
+│ 49             'product_name' => $structuredData['product_name'] ?? null,                                                                                                                    │
+│ 50             'artist_or_director' => $structuredData['artist_or_director'] ?? null,                                                                                                        │
+│ 51             'media_format' => $structuredData['media_format'] ?? null,                                                                                                                    │
+│ 52             'genre' => $structuredData['genre'] ?? null,                                                                                                                                  │
+│ 53             'condition' => $structuredData['condition'] ?? null,                                                                                                                          │
+│ 54         ]);                                                                                                                                                                               │
+│ 55     }                                                                                                                                                                                     │
+│ 56                                                                                                                                                                                           │
+│ 57     /**                                                                                                                                                                                   │
+│ 58      * Handle a job failure.                                                                                                                                                              │
+│ 59      */                                                                                                                                                                                   │
+│ 60     public function failed(Throwable $exception): void                                                                                                                                    │
+│ 61     {                                                                                                                                                                                     │
+│ 62         $batch = $this->mediaItem->batch;                                                                                                                                                 │
+│ 63                                                                                                                                                                                           │
+│ 64         if ($batch) {                                                                                                                                                                     │
+│ 65             $batch->update(['status' => 'failed']);                                                                                                                                       │
+│ 66         }                                                                                                                                                                                 │
+│ 67                                                                                                                                                                                           │
+│ 68         Log::error('CategorizeMediaJob failed', [                                                                                                                                         │
+│ 69             'media_item_id' => $this->mediaItem->id,                                                                                                                                      │
+│ 70             'batch_id' => $this->mediaItem->batch_id,                                                                                                                                     │
+│ 71             'error' => $exception->getMessage(),                                                                                                                                          │
+│ 72             'trace' => $exception->getTraceAsString(),                                                                                                                                    │
+│ 73         ]);                                                                                                                                                                               │
+│ 74     }                                                                                                                                                                                     │
+│ 75 }                                                                                                                                                                                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will now check the contents of the newly created CategorizeMediaJob.php file to ensure it was written correctly and doesn't contain any redundant text.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile app/Jobs/CategorizeMediaJob.php                                                                                                                                                  │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I have successfully created the CategorizeMediaJob in app/Jobs/CategorizeMediaJob.php. The job follows Laravel 11 standards, including strict type-hinting, PSR-12 compliance, and proper
+  dependency injection in the handle() method. It also includes the requested failed() method to update the batch status and log failure details.
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+ > update MediaUploadController.php. atm the store() method validates the request and creates a Batch but it doesn't process the uploaded data. update it so that if a user pastes text into        
+   raw_text, it splits the text by newlines. If they upload a csv_file it reads the file line by line. for every line of messy text, create a new MediaItem linked to the Batch we just created,    
+   storing the string in the raw_data column. immediately after creating the MediaItem record, dispatch a CategorizeMediaJob for it. Remember the Skinny Controller rule                            
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+✦ I will start by examining the current implementation of MediaUploadController.php and then determine the best way to move the processing logic into a service class while keeping the controller
+  slim.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile app/.../MediaUploadController.php                                                                                                                                                │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will create a MediaUploadService to handle the logic of processing uploaded data, creating MediaItem records, and dispatching the CategorizeMediaJob. This ensures the MediaUploadController
+  remains slim and adheres to the project's architectural standards.
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  WriteFile Writing to app/Services/MediaUploadService.php                                                                                                                                  │
+│                                                                                                                                                                                              │
+│  1 <?php                                                                                                                                                                                     │
+│  2                                                                                                                                                                                           │
+│  3 declare(strict_types=1);                                                                                                                                                                  │
+│  4                                                                                                                                                                                           │
+│  5 namespace App\Services;                                                                                                                                                                   │
+│  6                                                                                                                                                                                           │
+│  7 use App\Jobs\CategorizeMediaJob;                                                                                                                                                          │
+│  8 use App\Models\Batch;                                                                                                                                                                     │
+│  9 use App\Models\MediaItem;                                                                                                                                                                 │
+│ 10 use Illuminate\Http\UploadedFile;                                                                                                                                                         │
+│ 11 use Illuminate\Support\Facades\DB;                                                                                                                                                        │
+│ 12                                                                                                                                                                                           │
+│ 13 class MediaUploadService                                                                                                                                                                  │
+│ 14 {                                                                                                                                                                                         │
+│ 15     /**                                                                                                                                                                                   │
+│ 16      * Process the uploaded media data.                                                                                                                                                   │
+│ 17      *                                                                                                                                                                                    │
+│ 18      * @param string|null $rawText                                                                                                                                                        │
+│ 19      * @param UploadedFile|null $csvFile                                                                                                                                                  │
+│ 20      * @return Batch                                                                                                                                                                      │
+│ 21      */                                                                                                                                                                                   │
+│ 22     public function processUpload(?string $rawText, ?UploadedFile $csvFile): Batch                                                                                                        │
+│ 23     {                                                                                                                                                                                     │
+│ 24         $filename = $csvFile ? $csvFile->getClientOriginalName() : 'Raw Text Input';                                                                                                      │
+│ 25                                                                                                                                                                                           │
+│ 26         return DB::transaction(function () use ($rawText, $csvFile, $filename) {                                                                                                          │
+│ 27             $batch = Batch::create([                                                                                                                                                      │
+│ 28                 'original_filename' => $filename,                                                                                                                                         │
+│ 29                 'status' => 'pending',                                                                                                                                                    │
+│ 30             ]);                                                                                                                                                                           │
+│ 31                                                                                                                                                                                           │
+│ 32             if ($rawText) {                                                                                                                                                               │
+│ 33                 $this->processRawText($batch, $rawText);                                                                                                                                  │
+│ 34             }                                                                                                                                                                             │
+│ 35                                                                                                                                                                                           │
+│ 36             if ($csvFile) {                                                                                                                                                               │
+│ 37                 $this->processCsvFile($batch, $csvFile);                                                                                                                                  │
+│ 38             }                                                                                                                                                                             │
+│ 39                                                                                                                                                                                           │
+│ 40             return $batch;                                                                                                                                                                │
+│ 41         });                                                                                                                                                                               │
+│ 42     }                                                                                                                                                                                     │
+│ 43                                                                                                                                                                                           │
+│ 44     /**                                                                                                                                                                                   │
+│ 45      * Process raw text input.                                                                                                                                                            │
+│ 46      */                                                                                                                                                                                   │
+│ 47     private function processRawText(Batch $batch, string $rawText): void                                                                                                                  │
+│ 48     {                                                                                                                                                                                     │
+│ 49         $lines = preg_split('/\r\n|\r|\n/', $rawText, -1, PREG_SPLIT_NO_EMPTY);                                                                                                           │
+│ 50                                                                                                                                                                                           │
+│ 51         foreach ($lines as $line) {                                                                                                                                                       │
+│ 52             $this->createMediaItemAndDispatchJob($batch, trim($line));                                                                                                                    │
+│ 53         }                                                                                                                                                                                 │
+│ 54     }                                                                                                                                                                                     │
+│ 55                                                                                                                                                                                           │
+│ 56     /**                                                                                                                                                                                   │
+│ 57      * Process uploaded CSV file.                                                                                                                                                         │
+│ 58      */                                                                                                                                                                                   │
+│ 59     private function processCsvFile(Batch $batch, UploadedFile $csvFile): void                                                                                                            │
+│ 60     {                                                                                                                                                                                     │
+│ 61         $handle = fopen($csvFile->getRealPath(), 'r');                                                                                                                                    │
+│ 62         if ($handle !== false) {                                                                                                                                                          │
+│ 63             while (($data = fgetcsv($handle)) !== false) {                                                                                                                                │
+│ 64                 // Assuming the first column contains the raw media string                                                                                                                │
+│ 65                 $line = $data[0] ?? null;                                                                                                                                                 │
+│ 66                 if ($line && trim($line) !== '') {                                                                                                                                        │
+│ 67                     $this->createMediaItemAndDispatchJob($batch, trim($line));                                                                                                            │
+│ 68                 }                                                                                                                                                                         │
+│ 69             }                                                                                                                                                                             │
+│ 70             fclose($handle);                                                                                                                                                              │
+│ 71         }                                                                                                                                                                                 │
+│ 72     }                                                                                                                                                                                     │
+│ 73                                                                                                                                                                                           │
+│ 74     /**                                                                                                                                                                                   │
+│ 75      * Create a MediaItem and dispatch the categorization job.                                                                                                                            │
+│ 76      */                                                                                                                                                                                   │
+│ 77     private function createMediaItemAndDispatchJob(Batch $batch, string $rawData): void                                                                                                   │
+│ 78     {                                                                                                                                                                                     │
+│ 79         $mediaItem = MediaItem::create([                                                                                                                                                  │
+│ 80             'batch_id' => $batch->id,                                                                                                                                                     │
+│ 81             'raw_data' => $rawData,                                                                                                                                                       │
+│ 82         ]);                                                                                                                                                                               │
+│ 83                                                                                                                                                                                           │
+│ 84         CategorizeMediaJob::dispatch($mediaItem);                                                                                                                                         │
+│ 85     }                                                                                                                                                                                     │
+│ 86 }                                                                                                                                                                                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I will now update MediaUploadController.php to inject the MediaUploadService and use its processUpload method, ensuring the controller remains slim and focuses only on request handling and
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit app/.../MediaUploadController.php: <?php... => <?php...                                                                                                                              │
+│                                                                                                                                                                                              │
+│  1   <?php                                                                                                                                                                                   │
+│  2                                                                                                                                                                                           │
+│  3 + declare(strict_types=1);                                                                                                                                                                │
+│  4 +                                                                                                                                                                                         │
+│  5   namespace App\Http\Controllers;                                                                                                                                                         │
+│  6                                                                                                                                                                                           │
+│  5 - use App\Models\Batch;                                                                                                                                                                   │
+│  7 + use App\Services\MediaUploadService;                                                                                                                                                    │
+│  8 + use Illuminate\Http\RedirectResponse;                                                                                                                                                   │
+│  9   use Illuminate\Http\Request;                                                                                                                                                            │
+│ 10 + use Illuminate\View\View;                                                                                                                                                               │
+│ 11                                                                                                                                                                                           │
+│ 12   class MediaUploadController extends Controller                                                                                                                                          │
+│ 13   {                                                                                                                                                                                       │
+│ 14       /**                                                                                                                                                                                 │
+│ 15 +      * The MediaUploadService instance.                                                                                                                                                 │
+│ 16 +      */                                                                                                                                                                                 │
+│ 17 +     private MediaUploadService $mediaUploadService;                                                                                                                                     │
+│ 18 +                                                                                                                                                                                         │
+│ 19 +     /**                                                                                                                                                                                 │
+│ 20 +      * Create a new controller instance.                                                                                                                                                │
+│ 21 +      */                                                                                                                                                                                 │
+│ 22 +     public function __construct(MediaUploadService $mediaUploadService)                                                                                                                 │
+│ 23 +     {                                                                                                                                                                                   │
+│ 24 +         $this->mediaUploadService = $mediaUploadService;                                                                                                                                │
+│ 25 +     }                                                                                                                                                                                   │
+│ 26 +                                                                                                                                                                                         │
+│ 27 +     /**                                                                                                                                                                                 │
+│ 28        * Show the upload form.                                                                                                                                                            │
+│ 29        */                                                                                                                                                                                 │
+│ 13 -     public function show()                                                                                                                                                              │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│ 30 +     public function show(): View                                                                                                                                                        │
+│ 31       {                                                                                                                                                                                   │
+│ 32           return view('upload');                                                                                                                                                          │
+│ 33       }                                                                                                                                                                                   │
+│ 35       /**                                                                                                                                                                                 │
+│ 36        * Process the uploaded data and create a pending batch.                                                                                                                            │
+│ 37        */                                                                                                                                                                                 │
+│ 21 -     public function store(Request $request)                                                                                                                                             │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│ 38 +     public function store(Request $request): RedirectResponse                                                                                                                           │
+│ 39       {                                                                                                                                                                                   │
+│ 40           $validated = $request->validate([                                                                                                                                               │
+│ 41               'csv_file' => 'nullable|file|mimes:csv,txt|max:10240',                                                                                                                      │
+│ 46               return back()->withErrors(['error' => 'Please either upload a CSV file or paste raw text.']);                                                                               │
+│ 47           }                                                                                                                                                                               │
+│ 48                                                                                                                                                                                           │
+│ 32 -         $filename = 'Raw Text Input';                                                                                                                                                   │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│ 49 +         $this->mediaUploadService->processUpload(                                                                                                                                       │
+│ 50 +             $validated['raw_text'] ?? null,                                                                                                                                             │
+│ 51 +             $request->file('csv_file')                                                                                                                                                  │
+│ 52 +         );                                                                                                                                                                              │
+│ 53                                                                                                                                                                                           │
+│ 34 -         if ($request->hasFile('csv_file')) {                                                                                                                                            │
+│ 35 -             $file = $request->file('csv_file');                                                                                                                                         │
+│ 36 -             $filename = $file->getClientOriginalName();                                                                                                                                 │
+│ 37 -                                                                                                                                                                                         │
+│ 38 -             // Note: Saving the file to storage would happen here,                                                                                                                      │
+│ 39 -             // but for this step we are just tracking the Batch.                                                                                                                        │
+│ 40 -         }                                                                                                                                                                               │
+│ 41 -                                                                                                                                                                                         │
+│ 42 -         // Create a new Batch database record marking its status as 'pending'                                                                                                           │
+│ 43 -         Batch::create([                                                                                                                                                                 │
+│ 44 -             'original_filename' => $filename,                                                                                                                                           │
+│ 45 -             'status' => 'pending',                                                                                                                                                      │
+│ 46 -         ]);                                                                                                                                                                             │
+│ 47 -                                                                                                                                                                                         │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│ 54           return back()->with('success', 'Data submitted successfully. A new batch has been created and is pending processing.');                                                         │
+│ 55       }                                                                                                                                                                                   │
+│ 56   }                                                                                                                                                                                       │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I have updated MediaUploadController.php to follow the "Skinny Controller" rule by moving the processing logic into a new MediaUploadService. The service handles splitting raw text by newlines,
+  reading CSV files line by line, creating MediaItem records, and dispatching the CategorizeMediaJob for each item. The controller now injects this service and delegates the upload processing to
+  it.
+                                                                                                                                                                                    ? for shortcuts 
+───────────────────

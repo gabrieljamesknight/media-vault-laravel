@@ -1,0 +1,383 @@
+> create a new service class called MediaEnrichmentService in app/Services/. this class should have a single public method enrich(string $rawMediaString). its job is to take a messy string like  
+   'matrix reloaded dvd disc only sf', send it to the Gemini API using Laravel's native Http facade (dont use raw cURL in any circumstance) and return a structured array. engineer a strict system 
+   prompt for the LLM inside this method. The prompt must force the AI to return ONLY a valid JSON object with these keys: product_name, artist_or_director, media_format, genre, and condition. If 
+   the AI can't determine a value based on the string, it should return null for that key. make sure the Http call handles timeouts gracefully                                                      
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+✦ I will start by creating the app/Services directory and then implement the MediaEnrichmentService class, ensuring it uses Laravel's Http facade and follows the strict JSON schema and error
+  handling requirements.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell mkdir -p app/Services [current working directory /home/gerb/Projects/media-vault-laravel] (Creating the app/Services directory.)                                                    │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I'll search for any existing Gemini or API-related configuration in the project.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  SearchText 'GEMINI|API' within ./                                                                                                                                                         │
+│                                                                                                                                                                                              │
+│ Found 100 matches (limited)                                                                                                                                                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I'll check .env.example to see if there's a placeholder for the Gemini API key.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile .env.example                                                                                                                                                                     │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I'll read the MediaUploadController.php to see how the service might be integrated and if there are any existing patterns I should follow.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile app/.../MediaUploadController.php                                                                                                                                                │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I'll add the Gemini configuration to config/services.php to provide a consistent way of accessing the API key and URL.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit config/services.php:     'resend' => [... =>     'resend' => [...                                                                                                                    │
+│                                                                                                                                                                                              │
+│ 17       'postmark' => [                                                                                                                                                                     │
+│ 18           'key' => env('POSTMARK_API_KEY'),                                                                                                                                               │
+│ 19       ],                                                                                                                                                                                  │
+│ 20 + 'resend' => [                                                                                                                                                                           │
+│ 21 +     'key' => env('RESEND_API_KEY'),                                                                                                                                                     │
+│ 22 + ],                                                                                                                                                                                      │
+│ 23                                                                                                                                                                                           │
+│ 21 -     'resend' => [                                                                                                                                                                       │
+│ 22 -         'key' => env('RESEND_API_KEY'),                                                                                                                                                 │
+│ 23 -     ],                                                                                                                                                                                  │
+│ 24 + 'gemini' => [                                                                                                                                                                           │
+│ 25 +     'key' => env('GEMINI_API_KEY'),                                                                                                                                                     │
+│ 26 +     'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),                                                                                                                                 │
+│ 27 +     'url' => 'https://generativelanguage.googleapis.com/v1beta/models',                                                                                                                 │
+│ 28 + ],                                                                                                                                                                                      │
+│ 29                                                                                                                                                                                           │
+│ 30 + ];                                                                                                                                                                                      │
+│ 31 +                                                                                                                                                                                         │
+│ 32       'ses' => [                                                                                                                                                                          │
+│ 33           'key' => env('AWS_ACCESS_KEY_ID'),                                                                                                                                              │
+│ 34           'secret' => env('AWS_SECRET_ACCESS_KEY'),                                                                                                                                       │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I'll verify the content of config/services.php to ensure the Gemini configuration was correctly added.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile config/services.php                                                                                                                                                              │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I'll fix the malformed config/services.php by properly structuring the resend and gemini keys within the return array.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  WriteFile Writing to config/services.php                                                                                                                                                  │
+│                                                                                                                                                                                              │
+│ 17       'postmark' => [                                                                                                                                                                     │
+│ 18           'key' => env('POSTMARK_API_KEY'),                                                                                                                                               │
+│ 19       ],                                                                                                                                                                                  │
+│ 20 - 'resend' => [                                                                                                                                                                           │
+│ 21 -     'key' => env('RESEND_API_KEY'),                                                                                                                                                     │
+│ 22 - ],                                                                                                                                                                                      │
+│ 20                                                                                                                                                                                           │
+│ 24 - 'gemini' => [                                                                                                                                                                           │
+│ 25 -     'key' => env('GEMINI_API_KEY'),                                                                                                                                                     │
+│ 26 -     'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),                                                                                                                                 │
+│ 27 -     'url' => 'https://generativelanguage.googleapis.com/v1beta/models',                                                                                                                 │
+│ 28 - ],                                                                                                                                                                                      │
+│ 21 +     'resend' => [                                                                                                                                                                       │
+│ 22 +         'key' => env('RESEND_API_KEY'),                                                                                                                                                 │
+│ 23 +     ],                                                                                                                                                                                  │
+│ 24                                                                                                                                                                                           │
+│ 30 - ];                                                                                                                                                                                      │
+│ 25 +     'gemini' => [                                                                                                                                                                       │
+│ 26 +         'key' => env('GEMINI_API_KEY'),                                                                                                                                                 │
+│ 27 +         'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),                                                                                                                             │
+│ 28 +         'url' => 'https://generativelanguage.googleapis.com/v1beta/models',                                                                                                             │
+│ 29 +     ],                                                                                                                                                                                  │
+│ 30                                                                                                                                                                                           │
+│ 31       'ses' => [                                                                                                                                                                          │
+│ 32           'key' => env('AWS_ACCESS_KEY_ID'),                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I'll now implement the MediaEnrichmentService in app/Services/MediaEnrichmentService.php, including the strict system prompt and robust error handling.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  WriteFile Writing to app/.../MediaEnrichmentService.php                                                                                                                                   │
+│                                                                                                                                                                                              │
+│ ... first 28 lines hidden (Ctrl+O to show) ...                                                                                                                                               │
+│  29      * Create a new service instance.                                                                                                                                                    │
+│  30      */                                                                                                                                                                                  │
+│  31     public function __construct()                                                                                                                                                        │
+│  32     {                                                                                                                                                                                    │
+│  33         $this->apiKey = config('services.gemini.key');                                                                                                                                   │
+│  34         $this->model = config('services.gemini.model', 'gemini-1.5-flash');                                                                                                              │
+│  35         $this->baseUrl = config('services.gemini.url', 'https://generativelanguage.googleapis.com/v1beta/models');                                                                       │
+│  36     }                                                                                                                                                                                    │
+│  37                                                                                                                                                                                          │
+│  38     /**                                                                                                                                                                                  │
+│  39      * Enrich a messy media string using the Gemini API.                                                                                                                                 │
+│  40      *                                                                                                                                                                                   │
+│  41      * @param string $rawMediaString                                                                                                                                                     │
+│  42      * @return array<string, mixed>|null                                                                                                                                                 │
+│  43      */                                                                                                                                                                                  │
+│  44     public function enrich(string $rawMediaString): ?array                                                                                                                               │
+│  45     {                                                                                                                                                                                    │
+│  46         if (!$this->apiKey) {                                                                                                                                                            │
+│  47             Log::error('Gemini API key is not configured.');                                                                                                                             │
+│  48             return null;                                                                                                                                                                 │
+│  49         }                                                                                                                                                                                │
+│  50                                                                                                                                                                                          │
+│  51         $systemPrompt = <<<PROMPT                                                                                                                                                        │
+│  52 You are a specialist in physical media data processing. Your objective is to extract structured information from unstructured and messy strings representing items like DVDs, CDs, and   │
+│     Blu-rays.                                                                                                                                                                                │
+│  53                                                                                                                                                                                          │
+│  54 You must return ONLY a valid JSON object with the following keys:                                                                                                                        │
+│  55 - product_name: The title of the movie, album, or media item.                                                                                                                            │
+│  56 - artist_or_director: The main artist, band, or director associated with the item.                                                                                                       │
+│  57 - media_format: The format of the media (e.g., "DVD", "CD", "Blu-ray", "Vinyl").                                                                                                         │
+│  58 - genre: The primary genre of the content.                                                                                                                                               │
+│  59 - condition: Any mentioned condition of the item (e.g., "new", "used", "disc only").                                                                                                     │
+│  60                                                                                                                                                                                          │
+│  61 Rules:                                                                                                                                                                                   │
+│  62 1. Return ONLY the JSON object. Do not include markdown formatting or any other text.                                                                                                    │
+│  63 2. If you cannot determine a value for a specific key, return null for that key.                                                                                                         │
+│  64 3. Be as accurate as possible based on the provided string.                                                                                                                              │
+│  65 PROMPT;                                                                                                                                                                                  │
+│  66                                                                                                                                                                                          │
+│  67         try {                                                                                                                                                                            │
+│  68             $response = Http::withHeaders([                                                                                                                                              │
+│  69                 'Content-Type' => 'application/json',                                                                                                                                    │
+│  70             ])                                                                                                                                                                           │
+│  71             ->timeout(30)                                                                                                                                                                │
+│  72             ->post("{$this->baseUrl}/{$this->model}:generateContent?key={$this->apiKey}", [                                                                                              │
+│  73                 'contents' => [                                                                                                                                                          │
+│  74                     [                                                                                                                                                                    │
+│  75                         'parts' => [                                                                                                                                                     │
+│  76                             ['text' => "Input: {$rawMediaString}"]                                                                                                                       │
+│  77                         ]                                                                                                                                                                │
+│  78                     ]                                                                                                                                                                    │
+│  79                 ],                                                                                                                                                                       │
+│  80                 'systemInstruction' => [                                                                                                                                                 │
+│  81                     'parts' => [                                                                                                                                                         │
+│  82                         ['text' => $systemPrompt]                                                                                                                                        │
+│  83                     ]                                                                                                                                                                    │
+│  84                 ],                                                                                                                                                                       │
+│  85                 'generationConfig' => [                                                                                                                                                  │
+│  86                     'responseMimeType' => 'application/json',                                                                                                                            │
+│  87                 ]                                                                                                                                                                        │
+│  88             ]);                                                                                                                                                                          │
+│  89                                                                                                                                                                                          │
+│  90             if ($response->failed()) {                                                                                                                                                   │
+│  91                 Log::error('Gemini API call failed', [                                                                                                                                   │
+│  92                     'status' => $response->status(),                                                                                                                                     │
+│  93                     'body' => $response->body(),                                                                                                                                         │
+│  94                     'input' => $rawMediaString                                                                                                                                           │
+│  95                 ]);                                                                                                                                                                      │
+│  96                 return null;                                                                                                                                                             │
+│  97             }                                                                                                                                                                            │
+│  98                                                                                                                                                                                          │
+│  99             $data = $response->json();                                                                                                                                                   │
+│ 100             $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;                                                                                                       │
+│ 101                                                                                                                                                                                          │
+│ 102             if (!$text) {                                                                                                                                                                │
+│ 103                 Log::warning('Gemini API returned an empty result', ['input' => $rawMediaString]);                                                                                       │
+│ 104                 return null;                                                                                                                                                             │
+│ 105             }                                                                                                                                                                            │
+│ 106                                                                                                                                                                                          │
+│ 107             return json_decode($text, true);                                                                                                                                             │
+│ 108                                                                                                                                                                                          │
+│ 109         } catch (ConnectionException $e) {                                                                                                                                               │
+│ 110             Log::error('Gemini API timeout or connection error', [                                                                                                                       │
+│ 111                 'message' => $e->getMessage(),                                                                                                                                           │
+│ 112                 'input' => $rawMediaString                                                                                                                                               │
+│ 113             ]);                                                                                                                                                                          │
+│ 114             return null;                                                                                                                                                                 │
+│ 115         } catch (\Exception $e) {                                                                                                                                                        │
+│ 116             Log::error('Unexpected error during Media Enrichment', [                                                                                                                     │
+│ 117                 'message' => $e->getMessage(),                                                                                                                                           │
+│ 118                 'input' => $rawMediaString                                                                                                                                               │
+│ 119             ]);                                                                                                                                                                          │
+│ 120             return null;                                                                                                                                                                 │
+│ 121         }                                                                                                                                                                                │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I'll create a feature test to verify that the MediaEnrichmentService works as expected, specifically testing the handling of a successful API response.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell php artisan make:test Unit/MediaEnrichmentServiceTest --unit [current working directory /home/gerb/Projects/media-vault-laravel] (Creating a unit test for MediaEnrichmentService.) │
+│                                                                                                                                                                                              │
+│                                                                                                                                                                                              │
+│    INFO  Test [tests/Unit/Unit/MediaEnrichmentServiceTest.php] created successfully.                                                                                                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I'll correct the path for the MediaEnrichmentServiceTest.php file by moving it to the correct tests/Unit/ directory.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell mv tests/Unit/Unit/MediaEnrichmentServiceTest.php tests/Unit/MediaEnrichmentServiceTest.php && rmdir tests/Unit/Unit [current working directory /home/gerb/Projects/media-vault-la… │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I'll write a unit test for the MediaEnrichmentService to mock a successful API response and verify the extraction of media data.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  WriteFile Writing to .../MediaEnrichmentServiceTest.php                                                                                                                                   │
+│                                                                                                                                                                                              │
+│  1   <?php                                                                                                                                                                                   │
+│  2                                                                                                                                                                                           │
+│  3 - namespace Tests\Unit\Unit;                                                                                                                                                              │
+│  3 + namespace Tests\Unit;                                                                                                                                                                   │
+│  4                                                                                                                                                                                           │
+│  5 - use PHPUnit\Framework\TestCase;                                                                                                                                                         │
+│  5 + use App\Services\MediaEnrichmentService;                                                                                                                                                │
+│  6 + use Illuminate\Support\Facades\Http;                                                                                                                                                    │
+│  7 + use Illuminate\Support\Facades\Config;                                                                                                                                                  │
+│  8 + use Tests\TestCase;                                                                                                                                                                     │
+│  9                                                                                                                                                                                           │
+│ 10   class MediaEnrichmentServiceTest extends TestCase                                                                                                                                       │
+│ 11   {                                                                                                                                                                                       │
+│ 12       /**                                                                                                                                                                                 │
+│ 10 -      * A basic unit test example.                                                                                                                                                       │
+│ 13 +      * Test that the enrich method correctly parses a successful Gemini response.                                                                                                       │
+│ 14        */                                                                                                                                                                                 │
+│ 12 -     public function test_example(): void                                                                                                                                                │
+│ 15 +     public function test_enrich_returns_structured_data_on_success(): void                                                                                                              │
+│ 16       {                                                                                                                                                                                   │
+│ 14 -         $this->assertTrue(true);                                                                                                                                                        │
+│ 17 +         // Mock the configuration                                                                                                                                                       │
+│ 18 +         Config::set('services.gemini.key', 'test-key');                                                                                                                                 │
+│ 19 +         Config::set('services.gemini.model', 'gemini-1.5-flash');                                                                                                                       │
+│ 20 +         Config::set('services.gemini.url', 'https://generativelanguage.googleapis.com/v1beta/models');                                                                                  │
+│ 21 +                                                                                                                                                                                         │
+│ 22 +         $mockResponse = [                                                                                                                                                               │
+│ 23 +             'candidates' => [                                                                                                                                                           │
+│ 24 +                 [                                                                                                                                                                       │
+│ 25 +                     'content' => [                                                                                                                                                      │
+│ 26 +                         'parts' => [                                                                                                                                                    │
+│ 27 +                             [                                                                                                                                                           │
+│ 28 +                                 'text' => json_encode([                                                                                                                                 │
+│ 29 +                                     'product_name' => 'The Matrix Reloaded',                                                                                                            │
+│ 30 +                                     'artist_or_director' => 'The Wachowskis',                                                                                                           │
+│ 31 +                                     'media_format' => 'DVD',                                                                                                                            │
+│ 32 +                                     'genre' => 'Action/Sci-Fi',                                                                                                                         │
+│ 33 +                                     'condition' => 'disc only',                                                                                                                         │
+│ 34 +                                 ])                                                                                                                                                      │
+│ 35 +                             ]                                                                                                                                                           │
+│ 36 +                         ]                                                                                                                                                               │
+│ 37 +                     ]                                                                                                                                                                   │
+│ 38 +                 ]                                                                                                                                                                       │
+│ 39 +             ]                                                                                                                                                                           │
+│ 40 +         ];                                                                                                                                                                              │
+│ 41 +                                                                                                                                                                                         │
+│ 42 +         Http::fake([                                                                                                                                                                    │
+│ 43 +             'generativelanguage.googleapis.com/*' => Http::response($mockResponse, 200),                                                                                                │
+│ 44 +         ]);                                                                                                                                                                             │
+│ 45 +                                                                                                                                                                                         │
+│ 46 +         $service = new MediaEnrichmentService();                                                                                                                                        │
+│ 47 +         $result = $service->enrich('matrix reloaded dvd disc only sf');                                                                                                                 │
+│ 48 +                                                                                                                                                                                         │
+│ 49 +         $this->assertNotNull($result);                                                                                                                                                  │
+│ 50 +         $this->assertEquals('The Matrix Reloaded', $result['product_name']);                                                                                                            │
+│ 51 +         $this->assertEquals('The Wachowskis', $result['artist_or_director']);                                                                                                           │
+│ 52 +         $this->assertEquals('DVD', $result['media_format']);                                                                                                                            │
+│ 53 +         $this->assertEquals('Action/Sci-Fi', $result['genre']);                                                                                                                         │
+│ 54 +         $this->assertEquals('disc only', $result['condition']);                                                                                                                         │
+│ 55       }                                                                                                                                                                                   │
+│ 56 +                                                                                                                                                                                         │
+│ 57 +     /**                                                                                                                                                                                 │
+│ 58 +      * Test that the enrich method returns null on API failure.                                                                                                                         │
+│ 59 +      */                                                                                                                                                                                 │
+│ 60 +     public function test_enrich_returns_null_on_api_failure(): void                                                                                                                     │
+│ 61 +     {                                                                                                                                                                                   │
+│ 62 +         Config::set('services.gemini.key', 'test-key');                                                                                                                                 │
+│ 63 +                                                                                                                                                                                         │
+│ 64 +         Http::fake([                                                                                                                                                                    │
+│ 65 +             'generativelanguage.googleapis.com/*' => Http::response(['error' => 'Internal Server Error'], 500),                                                                         │
+│ 66 +         ]);                                                                                                                                                                             │
+│ 67 +                                                                                                                                                                                         │
+│ 68 +         $service = new MediaEnrichmentService();                                                                                                                                        │
+│ 69 +         $result = $service->enrich('some random string');                                                                                                                               │
+│ 70 +                                                                                                                                                                                         │
+│ 71 +         $this->assertNull($result);                                                                                                                                                     │
+│ 72 +     }                                                                                                                                                                                   │
+│ 73 +                                                                                                                                                                                         │
+│ 74 +     /**                                                                                                                                                                                 │
+│ 75 +      * Test that the enrich method returns null when API key is missing.                                                                                                                │
+│ 76 +      */                                                                                                                                                                                 │
+│ 77 +     public function test_enrich_returns_null_when_api_key_missing(): void                                                                                                               │
+│ 78 +     {                                                                                                                                                                                   │
+│ 79 +         Config::set('services.gemini.key', null);                                                                                                                                       │
+│ 80 +                                                                                                                                                                                         │
+│ 81 +         $service = new MediaEnrichmentService();                                                                                                                                        │
+│ 82 +         $result = $service->enrich('some random string');                                                                                                                               │
+│ 83 +                                                                                                                                                                                         │
+│ 84 +         $this->assertNull($result);                                                                                                                                                     │
+│ 85 +     }                                                                                                                                                                                   │
+│ 86   }                                                                                                                                                                                       │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I'll run the unit tests for the MediaEnrichmentService to confirm its correct behavior.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell php artisan test tests/Unit/MediaEnrichmentServiceTest.php [current working directory /home/gerb/Projects/media-vault-laravel] (Running the MediaEnrichmentService tests.)          │
+│                                                                                                                                                                                              │
+│                                                                                                                                                                                              │
+│    WARN  Tests\Unit\MediaEnrichmentServiceTest                                                                                                                                               │
+│   ! enrich returns structured data on success → file_get_contents(/home/gerb/Projects/media-vault-laravel/.env): Failed to open stream: No such file or directory                    0.10s   │
+│   ! enrich returns null on api failure → file_get_contents(/home/gerb/Projects/media-vault-laravel/.env): Failed to open stream: No such file or directory                           0.01s   │
+│   ! enrich returns null when api key missing → file_get_contents(/home/gerb/Projects/media-vault-laravel/.env): Failed to open stream: No such file or directory                     0.01s   │
+│                                                                                                                                                                                              │
+│   Tests:    3 warnings (8 assertions)                                                                                                                                                        │
+│   Duration: 0.21s                                                                                                                                                                            │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I'll create a .env file by copying the .env.example file to satisfy Laravel's requirement for a configuration file during testing.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell cp .env.example .env && php artisan key:generate [current working directory /home/gerb/Projects/media-vault-laravel] (Creating .env file and generating application key.)           │
+│                                                                                                                                                                                              │
+│                                                                                                                                                                                              │
+│    INFO  Application key set successfully.                                                                                                                                                   │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I'll rerun the MediaEnrichmentService tests to ensure they pass with the newly created .env file.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell php artisan test tests/Unit/MediaEnrichmentServiceTest.php [current working directory /home/gerb/Projects/media-vault-laravel] (Rerunning the MediaEnrichmentService tests.)        │
+│                                                                                                                                                                                              │
+│                                                                                                                                                                                              │
+│    PASS  Tests\Unit\MediaEnrichmentServiceTest                                                                                                                                               │
+│   ✓ enrich returns structured data on success                                                                                                                                        0.09s   │
+│   ✓ enrich returns null on api failure                                                                                                                                               0.01s   │
+│   ✓ enrich returns null when api key missing                                                                                                                                         0.01s   │
+│                                                                                                                                                                                              │
+│   Tests:    3 passed (8 assertions)                                                                                                                                                          │
+│   Duration: 0.21s                                                                                                                                                                            │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I've implemented the MediaEnrichmentService as requested. 
+
+   1. Service Location: Created at app/Services/MediaEnrichmentService.php.
+   2. Strict Prompt: Engineered a system prompt that enforces a JSON response with the keys product_name, artist_or_director, media_format, genre, and condition, returning null for unknown values.
+   3. Laravel Native Http: Used Illuminate\Support\Facades\Http to communicate with the Gemini API.
+   4. Graceful Timeouts: Configured a 30-second timeout with specific logging for ConnectionException and other failures.
+   5. Strict Typing: Applied declare(strict_types=1); and full type-hinting for properties, parameters, and return types.
+   6. Configuration: Added Gemini API settings to config/services.php.
+   7. Verification: Verified the implementation with unit tests mocking the API response.
+
+  The service is now ready to be injected into controllers or background jobs.
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell php artisan test tests/Unit/MediaEnrichmentServiceTest.php [current working directory /home/gerb/Projects/media-vault-laravel] (Final verification of the MediaEnrichmentService.)  │
+│                                                                                                                                                                                              │
+│                                                                                                                                                                                              │
+│    PASS  Tests\Unit\MediaEnrichmentServiceTest                                                                                                                                               │
+│   ✓ enrich returns structured data on success                                                                                                                                        0.09s   │
+│   ✓ enrich returns null on api failure                                                                                                                                               0.01s   │
+│   ✓ enrich returns null when api key missing                                                                                                                                         0.01s   │
+│                                                                                                                                                                                              │
+│   Tests:    3 passed (8 assertions)                                                                                                                                                          │
+│   Duration: 0.21s                                                                                                                                                                            │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I've implemented the MediaEnrichmentService in app/Services/ as requested, ensuring it strictly follows the architectural guidelines and requirements.
+
+  Changes Summary
+   - Created app/Services/MediaEnrichmentService.php: A new service class with a single enrich() method.
+   - Strict System Prompt: Engineered a system instruction for Gemini that enforces a JSON response with the specific keys: product_name, artist_or_director, media_format, genre, and condition.
+   - Laravel Http Facade: Used Laravel's native Http client with a 30-second timeout and robust error logging.
+   - Service Configuration: Added gemini credentials to config/services.php for centralized management.
+   - Unit Tested: Created tests/Unit/MediaEnrichmentServiceTest.php to verify successful parsing and error handling.
+
+  The service can now be used in your controllers or jobs via dependency injection:
+
+   1 use App\Services\MediaEnrichmentService;
+   2
+   3 public function __construct(private MediaEnrichmentService $enrichmentService) {}
+   4
+   5 $result = $this->enrichmentService->enrich('matrix reloaded dvd disc only sf');
