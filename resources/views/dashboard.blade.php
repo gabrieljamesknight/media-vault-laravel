@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MediaVault - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 min-h-screen" x-data="dashboard()" x-init="initPolling()">
     <!-- Navigation -->
     <nav class="bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -34,37 +35,51 @@
 
     <div class="py-10">
         <header>
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
                 <h1 class="text-3xl font-bold leading-tight text-gray-900">Processing Results</h1>
+                <div class="flex items-center space-x-2 text-sm text-gray-500">
+                    <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span>Live Updates On</span>
+                </div>
             </div>
         </header>
         <main>
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="px-4 py-8 sm:px-0">
-                    @forelse ($batches as $batch)
-                        @php
-                            $totalItems = $batch->mediaItems->count();
-                            $completedItems = $batch->mediaItems->whereNotNull('product_name')->count();
-                            $progress = $totalItems > 0 ? round(($completedItems / $totalItems) * 100) : 0;
-                        @endphp
+                    <template x-if="batches.length === 0">
+                        <div class="text-center py-12">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No batches processed</h3>
+                            <p class="mt-1 text-sm text-gray-500">Get started by ingesting some media data.</p>
+                            <div class="mt-6">
+                                <a href="{{ route('upload.show') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Go to Ingest
+                                </a>
+                            </div>
+                        </div>
+                    </template>
 
+                    <template x-for="batch in batches" :key="batch.id">
                         <div class="bg-white overflow-hidden shadow rounded-lg mb-8">
                             <div class="px-4 py-5 sm:p-6">
                                 <div class="md:flex md:items-center md:justify-between mb-4">
                                     <div class="flex-1 min-w-0">
                                         <h2 class="text-xl font-bold leading-7 text-gray-900 sm:text-2xl sm:truncate">
-                                            Batch #{{ $batch->id }} - {{ $batch->original_filename ?? 'Raw Text Input' }}
+                                            Batch #<span x-text="batch.id"></span> - <span x-text="batch.original_filename || 'Raw Text Input'"></span>
                                         </h2>
                                         <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
                                             <div class="mt-2 flex items-center text-sm text-gray-500">
                                                 <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                 </svg>
-                                                {{ $batch->created_at->format('M j, Y H:i') }}
+                                                <span x-text="formatDate(batch.created_at)"></span>
                                             </div>
                                             <div class="mt-2 flex items-center text-sm text-gray-500">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $batch->status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                                    {{ ucfirst($batch->status) }}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
+                                                      :class="batch.status === 'completed' ? 'bg-green-100 text-green-800' : (batch.status === 'failed' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800')"
+                                                      x-text="batch.status.charAt(0).toUpperCase() + batch.status.slice(1)">
                                                 </span>
                                             </div>
                                         </div>
@@ -73,10 +88,10 @@
                                     <div class="mt-4 flex-shrink-0 md:mt-0 md:ml-4 w-48">
                                         <div class="text-sm font-medium text-gray-700 mb-1 flex justify-between">
                                             <span>Progress</span>
-                                            <span>{{ $completedItems }}/{{ $totalItems }}</span>
+                                            <span x-text="getBatchProgressText(batch)"></span>
                                         </div>
                                         <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                            <div class="bg-indigo-600 h-2.5 rounded-full" style="width: {{ $progress }}%"></div>
+                                            <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" :style="`width: ${getBatchProgressPercentage(batch)}%`"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -97,34 +112,23 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody class="bg-white divide-y divide-gray-200">
-                                                        @forelse ($batch->mediaItems as $item)
-                                                            <tr>
-                                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs" title="{{ $item->raw_data }}">
-                                                                    {{ $item->raw_data }}
-                                                                </td>
-                                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                                    {{ $item->product_name ?? '---' }}
-                                                                </td>
-                                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                    {{ $item->artist_or_director ?? '---' }}
-                                                                </td>
-                                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                    {{ $item->media_format ?? '---' }}
-                                                                </td>
-                                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                    {{ $item->genre ?? '---' }}
-                                                                </td>
-                                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                    {{ $item->condition ?? '---' }}
-                                                                </td>
-                                                            </tr>
-                                                        @empty
+                                                        <template x-if="batch.media_items.length === 0">
                                                             <tr>
                                                                 <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
                                                                     No items found in this batch.
                                                                 </td>
                                                             </tr>
-                                                        @endforelse
+                                                        </template>
+                                                        <template x-for="item in batch.media_items" :key="item.id">
+                                                            <tr>
+                                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs" :title="item.raw_data" x-text="item.raw_data"></td>
+                                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="item.product_name || '---'"></td>
+                                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="item.artist_or_director || '---'"></td>
+                                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="item.media_format || '---'"></td>
+                                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="item.genre || '---'"></td>
+                                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="item.condition || '---'"></td>
+                                                            </tr>
+                                                        </template>
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -133,23 +137,54 @@
                                 </div>
                             </div>
                         </div>
-                    @empty
-                        <div class="text-center py-12">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                            </svg>
-                            <h3 class="mt-2 text-sm font-medium text-gray-900">No batches processed</h3>
-                            <p class="mt-1 text-sm text-gray-500">Get started by ingesting some media data.</p>
-                            <div class="mt-6">
-                                <a href="{{ route('upload.show') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                    Go to Ingest
-                                </a>
-                            </div>
-                        </div>
-                    @endforelse
+                    </template>
                 </div>
             </div>
         </main>
     </div>
+
+    <script>
+        function dashboard() {
+            return {
+                batches: @json($batches),
+                
+                initPolling() {
+                    setInterval(async () => {
+                        try {
+                            const response = await fetch('{{ route('dashboard.data') }}');
+                            const data = await response.json();
+                            this.batches = data.batches;
+                        } catch (error) {
+                            console.error('Failed to fetch dashboard data:', error);
+                        }
+                    }, 3000);
+                },
+
+                getBatchProgressText(batch) {
+                    const total = batch.media_items.length;
+                    const completed = batch.media_items.filter(item => item.product_name !== null).length;
+                    return `${completed}/${total}`;
+                },
+
+                getBatchProgressPercentage(batch) {
+                    const total = batch.media_items.length;
+                    if (total === 0) return 0;
+                    const completed = batch.media_items.filter(item => item.product_name !== null).length;
+                    return Math.round((completed / total) * 100);
+                },
+
+                formatDate(dateString) {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: 'numeric'
+                    });
+                }
+            }
+        }
+    </script>
 </body>
 </html>
