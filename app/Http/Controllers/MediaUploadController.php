@@ -1,16 +1,33 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use App\Models\Batch;
+use App\Services\MediaUploadService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class MediaUploadController extends Controller
 {
     /**
+     * The MediaUploadService instance.
+     */
+    private MediaUploadService $mediaUploadService;
+
+    /**
+     * Create a new controller instance.
+     */
+    public function __construct(MediaUploadService $mediaUploadService)
+    {
+        $this->mediaUploadService = $mediaUploadService;
+    }
+
+    /**
      * Show the upload form.
      */
-    public function show()
+    public function show(): View
     {
         return view('upload');
     }
@@ -18,7 +35,7 @@ class MediaUploadController extends Controller
     /**
      * Process the uploaded data and create a pending batch.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'csv_file' => 'nullable|file|mimes:csv,txt|max:10240',
@@ -29,21 +46,10 @@ class MediaUploadController extends Controller
             return back()->withErrors(['error' => 'Please either upload a CSV file or paste raw text.']);
         }
 
-        $filename = 'Raw Text Input';
-
-        if ($request->hasFile('csv_file')) {
-            $file = $request->file('csv_file');
-            $filename = $file->getClientOriginalName();
-            
-            // Note: Saving the file to storage would happen here,
-            // but for this step we are just tracking the Batch.
-        }
-
-        // Create a new Batch database record marking its status as 'pending'
-        Batch::create([
-            'original_filename' => $filename,
-            'status' => 'pending',
-        ]);
+        $this->mediaUploadService->processUpload(
+            $validated['raw_text'] ?? null,
+            $request->file('csv_file')
+        );
 
         return back()->with('success', 'Data submitted successfully. A new batch has been created and is pending processing.');
     }
