@@ -52,6 +52,20 @@ class CategorizeMediaJob implements ShouldQueue
             'genre' => $structuredData['genre'] ?? null,
             'condition' => $structuredData['condition'] ?? null,
         ]);
+
+        $batch = $this->mediaItem->batch;
+
+        if ($batch) {
+            // Check if all items in the batch have been processed.
+            // Items are considered processed if their updated_at timestamp differs from created_at.
+            $allProcessed = $batch->mediaItems()
+                ->whereColumn('updated_at', '=', 'created_at')
+                ->count() === 0;
+
+            if ($allProcessed) {
+                $batch->update(['status' => 'completed']);
+            }
+        }
     }
 
     /**
