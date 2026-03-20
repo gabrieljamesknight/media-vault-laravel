@@ -8,11 +8,19 @@
 
 @section('content')
     <header>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center py-6">
             <h1 class="text-3xl font-bold leading-tight text-gray-900">Processing Results</h1>
-            <div class="flex items-center space-x-2 text-sm text-gray-500">
-                <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-                <span>Live Updates On</span>
+            <div class="flex items-center space-x-4">
+                <a href="{{ route('dashboard.export') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download CSV
+                </a>
+                <div class="flex items-center space-x-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full border border-gray-100 shadow-sm">
+                    <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="font-medium">Live Updates On</span>
+                </div>
             </div>
         </div>
     </header>
