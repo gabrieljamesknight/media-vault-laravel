@@ -12,6 +12,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
 
 class CategorizeMediaJob implements ShouldQueue
@@ -46,11 +47,11 @@ class CategorizeMediaJob implements ShouldQueue
         }
 
         $this->mediaItem->update([
-            'product_name' => $structuredData['product_name'] ?? null,
-            'artist_or_director' => $structuredData['artist_or_director'] ?? null,
-            'media_format' => $structuredData['media_format'] ?? null,
-            'genre' => $structuredData['genre'] ?? null,
-            'condition' => $structuredData['condition'] ?? null,
+            'product_name' => isset($structuredData['product_name']) ? Str::title((string) $structuredData['product_name']) : null,
+            'artist_or_director' => isset($structuredData['artist_or_director']) ? Str::title((string) $structuredData['artist_or_director']) : null,
+            'media_format' => isset($structuredData['media_format']) ? Str::title((string) $structuredData['media_format']) : null,
+            'genre' => isset($structuredData['genre']) ? Str::title((string) $structuredData['genre']) : null,
+            'condition' => isset($structuredData['condition']) ? Str::title((string) $structuredData['condition']) : null,
         ]);
 
         $batch = $this->mediaItem->batch;
