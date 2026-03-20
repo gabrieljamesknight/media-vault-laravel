@@ -62,4 +62,16 @@ class DashboardController extends Controller
             'Content-Type' => 'text/csv; charset=utf-8',
         ]);
     }
+
+    /**
+     * Export processed media items for a specific batch to a CSV file.
+     */
+    public function exportBatchCsv(Batch $batch): StreamedResponse
+    {
+        return response()->streamDownload(function () use ($batch) {
+            echo $this->exportService->generateCsv($batch->id);
+        }, "batch_{$batch->id}_export.csv", [
+            'Content-Type' => 'text/csv; charset=utf-8',
+        ]);
+    }
 }

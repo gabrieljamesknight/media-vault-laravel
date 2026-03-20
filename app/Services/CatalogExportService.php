@@ -10,13 +10,20 @@ use Illuminate\Database\Eloquent\Collection;
 class CatalogExportService
 {
     /**
-     * Generate a CSV string of all successfully processed media items.
+     * Generate a CSV string of successfully processed media items.
      *
+     * @param int|null $batchId
      * @return string
      */
-    public function generateCsv(): string
+    public function generateCsv(?int $batchId = null): string
     {
-        $mediaItems = MediaItem::whereNotNull('product_name')->get();
+        $query = MediaItem::whereNotNull('product_name');
+
+        if ($batchId !== null) {
+            $query->where('batch_id', $batchId);
+        }
+
+        $mediaItems = $query->get();
 
         $handle = fopen('php://temp', 'r+');
         if ($handle === false) {

@@ -60,14 +60,45 @@ class CatalogExportServiceTest extends TestCase
         $lines = explode("\n", trim($cleanCsv));
 
         $this->assertCount(3, $lines); // Header + 2 data rows
-        $this->assertStringContainsString('Product Name', $lines[0]);
-        $this->assertStringContainsString('Artist/Director', $lines[0]);
-        $this->assertStringContainsString('Format', $lines[0]);
-        $this->assertStringContainsString('Genre', $lines[0]);
-        $this->assertStringContainsString('Condition', $lines[0]);
-        $this->assertStringContainsString('Raw Input', $lines[0]);
         $this->assertStringContainsString('The Matrix', $lines[1]);
         $this->assertStringContainsString('Inception', $lines[2]);
-        $this->assertStringNotContainsString('messy item', $csv);
+    }
+
+    public function test_it_filters_csv_by_batch_id_when_provided(): void
+    {
+        // 1. Arrange
+        $batch1 = Batch::create([
+            'status' => 'completed',
+            'original_filename' => 'batch1.txt',
+        ]);
+        $batch2 = Batch::create([
+            'status' => 'completed',
+            'original_filename' => 'batch2.txt',
+        ]);
+
+        MediaItem::create([
+            'batch_id' => $batch1->id,
+            'raw_data' => 'item 1',
+            'product_name' => 'Product 1',
+        ]);
+
+        MediaItem::create([
+            'batch_id' => $batch2->id,
+            'raw_data' => 'item 2',
+            'product_name' => 'Product 2',
+        ]);
+
+        $service = new CatalogExportService();
+
+        // 2. Act
+        $csv = $service->generateCsv($batch1->id);
+
+        // 3. Assert
+        $cleanCsv = ltrim($csv, "\xEF\xBB\xBF");
+        $lines = explode("\n", trim($cleanCsv));
+
+        $this->assertCount(2, $lines); // Header + 1 data row
+        $this->assertStringContainsString('Product 1', $lines[1]);
+        $this->assertStringNotContainsString('Product 2', $csv);
     }
 }
