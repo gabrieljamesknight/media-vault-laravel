@@ -35,7 +35,7 @@
                         <select x-model="genre" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">
                             <option value="">All Genres</option>
                             @foreach($genres as $genreOption)
-                                <option value="{{ $genreOption }}">{{ $genreOption === null || $genreOption === '' || strtolower((string)$genreOption) === 'null' ? 'Uncategorized' : $genreOption }}</option>
+                                <option value="{{ $genreOption }}">{{ $genreOption }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -43,7 +43,7 @@
                         <select x-model="mediaFormat" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">
                             <option value="">All Formats</option>
                             @foreach($mediaFormats as $formatOption)
-                                <option value="{{ $formatOption }}">{{ $formatOption === null || $formatOption === '' || strtolower((string)$formatOption) === 'null' ? 'Uncategorized' : $formatOption }}</option>
+                                <option value="{{ $formatOption }}">{{ $formatOption }}</option>
                             @endforeach
                         </select>
                     </div>

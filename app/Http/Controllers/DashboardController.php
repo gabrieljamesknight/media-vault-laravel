@@ -38,11 +38,19 @@ class DashboardController extends Controller
 
         $genres = MediaItem::distinct()
             ->pluck('genre')
+            ->map(function ($genre) {
+                return ($genre === null || $genre === '' || strtolower((string)$genre) === 'null') ? 'Uncategorized' : $genre;
+            })
+            ->unique()
             ->sort()
             ->values();
 
         $mediaFormats = MediaItem::distinct()
             ->pluck('media_format')
+            ->map(function ($format) {
+                return ($format === null || $format === '' || strtolower((string)$format) === 'null') ? 'Uncategorized' : $format;
+            })
+            ->unique()
             ->sort()
             ->values();
 
@@ -59,24 +67,40 @@ class DashboardController extends Controller
         $mediaFormat = $request->query('media_format');
 
         $filterClosure = function ($q) use ($search, $genre, $mediaFormat) {
-            if ($search) {
+            if ($search !== null && $search !== '') {
                 $q->where(function ($subQ) use ($search) {
                     $subQ->where('product_name', 'like', '%' . $search . '%')
                          ->orWhere('artist_or_director', 'like', '%' . $search . '%')
                          ->orWhere('raw_data', 'like', '%' . $search . '%');
                 });
             }
-            if ($genre) {
-                $q->where('genre', $genre);
+            if ($genre !== null && $genre !== '') {
+                if ($genre === 'Uncategorized') {
+                    $q->where(function ($subQ) {
+                        $subQ->whereNull('genre')
+                             ->orWhere('genre', '')
+                             ->orWhereRaw('LOWER(genre) = ?', ['null']);
+                    });
+                } else {
+                    $q->where('genre', $genre);
+                }
             }
-            if ($mediaFormat) {
-                $q->where('media_format', $mediaFormat);
+            if ($mediaFormat !== null && $mediaFormat !== '') {
+                if ($mediaFormat === 'Uncategorized') {
+                    $q->where(function ($subQ) {
+                        $subQ->whereNull('media_format')
+                             ->orWhere('media_format', '')
+                             ->orWhereRaw('LOWER(media_format) = ?', ['null']);
+                    });
+                } else {
+                    $q->where('media_format', $mediaFormat);
+                }
             }
         };
 
         $query = Batch::with(['mediaItems' => $filterClosure]);
 
-        if ($search || $genre || $mediaFormat) {
+        if (($search !== null && $search !== '') || ($genre !== null && $genre !== '') || ($mediaFormat !== null && $mediaFormat !== '')) {
             $query->whereHas('mediaItems', $filterClosure);
         }
 
