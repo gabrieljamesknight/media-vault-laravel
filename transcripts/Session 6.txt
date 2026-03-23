@@ -502,3 +502,152 @@ i want to add searching and category filtering to the  dashboard. in resources/v
 
   Then, in resources/views/dashboard.blade.php, I updated the two @foreach loops handling the options for the <select> dropdowns to include the logic that translates null, "", and "null" to
   "Uncategorized", while leaving the value attribute equal to the variable itself so filtering continues to function properly.
+
+  > currently 'uncategorized' is showing up twice in both the genre and format dropdown menus. One of them is acting as a default 'show all' filter and the other is pulling the actual              
+   'uncategorized' strings from the database. update the relevant Controller and the Blade view with the dropdowns so that:                                                                         
+                                                                                                                                                                                                    
+       The default, top-level option for the dropdowns is explicitly called 'All Genres' and 'All Formats' (with an empty value for the query filter).                                              
+                                                                                                                                                                                                    
+       The database query strictly pulls distinct genres and formats for the rest of the options, so 'Uncategorized' only shows up once to represent items that actually have that value in the     
+   database.                                                                                                                                                                                        
+                                                                                                                                                                                                    
+       Ensure the filtering logic in the Controller correctly handles the empty 'All' value to return the full dataset without filtering.                                                           
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell php artisan tinker --execute="dump(App\Models\MediaItem::distinct()->pluck('genre'));" [current working directory /home/gerb/Projects/media-vault-laravel] (Check what genres exis… │
+│                                                                                                                                                                                              │
+│ Illuminate\Support\Collection^ {#6034                                                                                                                                                        │
+│   #items: array:3 [                                                                                                                                                                          │
+│     0 => "Rock"                                                                                                                                                                              │
+│     1 => "Science Fiction"                                                                                                                                                                   │
+│     2 => "Null"                                                                                                                                                                              │
+│   ]                                                                                                                                                                                          │
+│   #escapeWhenCastingToString: false                                                                                                                                                          │
+│ } // vendor/psy/psysh/src/ExecutionClosure.php(41) : eval()'d code:1                                                                                                                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit app/.../DashboardController.php: <?php... => <?php...                                                                                                                                │
+│                                                                                                                                                                                              │
+│  38                                                                                                                                                                                          │
+│  39   $genres = MediaItem::distinct()                                                                                                                                                        │
+│  40       ->pluck('genre')                                                                                                                                                                   │
+│  41 +     ->map(function ($genre) {                                                                                                                                                          │
+│  42 +         return ($genre === null || $genre === '' || strtolower((string)$genre) === 'null') ? 'Uncategorized' : $genre;                                                                 │
+│  43 +     })                                                                                                                                                                                 │
+│  44 +     ->unique()                                                                                                                                                                         │
+│  45       ->sort()                                                                                                                                                                           │
+│  46       ->values();                                                                                                                                                                        │
+│  47                                                                                                                                                                                          │
+│  48   $mediaFormats = MediaItem::distinct()                                                                                                                                                  │
+│  49       ->pluck('media_format')                                                                                                                                                            │
+│  50 +     ->map(function ($format) {                                                                                                                                                         │
+│  51 +         return ($format === null || $format === '' || strtolower((string)$format) === 'null') ? 'Uncategorized' : $format;                                                             │
+│  52 +     })                                                                                                                                                                                 │
+│  53 +     ->unique()                                                                                                                                                                         │
+│  54       ->sort()                                                                                                                                                                           │
+│  55       ->values();                                                                                                                                                                        │
+│  56                                                                                                                                                                                          │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│  67   $mediaFormat = $request->query('media_format');                                                                                                                                        │
+│  68                                                                                                                                                                                          │
+│  69   $filterClosure = function ($q) use ($search, $genre, $mediaFormat) {                                                                                                                   │
+│  62 -     if ($search) {                                                                                                                                                                     │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│  70 +     if ($search !== null && $search !== '') {                                                                                                                                          │
+│  71           $q->where(function ($subQ) use ($search) {                                                                                                                                     │
+│  72               $subQ->where('product_name', 'like', '%' . $search . '%')                                                                                                                  │
+│  73                    ->orWhere('artist_or_director', 'like', '%' . $search . '%')                                                                                                          │
+│  74                    ->orWhere('raw_data', 'like', '%' . $search . '%');                                                                                                                   │
+│  75           });                                                                                                                                                                            │
+│  76       }                                                                                                                                                                                  │
+│  69 -     if ($genre) {                                                                                                                                                                      │
+│  70 -         $q->where('genre', $genre);                                                                                                                                                    │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│  77 +     if ($genre !== null && $genre !== '') {                                                                                                                                            │
+│  78 +         if ($genre === 'Uncategorized') {                                                                                                                                              │
+│  79 +             $q->where(function ($subQ) {                                                                                                                                               │
+│  80 +                 $subQ->whereNull('genre')                                                                                                                                              │
+│  81 +                      ->orWhere('genre', '')                                                                                                                                            │
+│  82 +                      ->orWhereRaw('LOWER(genre) = ?', ['null']);                                                                                                                       │
+│  83 +             });                                                                                                                                                                        │
+│  84 +         } else {                                                                                                                                                                       │
+│  85 +             $q->where('genre', $genre);                                                                                                                                                │
+│  86 +         }                                                                                                                                                                              │
+│  87       }                                                                                                                                                                                  │
+│  72 -     if ($mediaFormat) {                                                                                                                                                                │
+│  73 -         $q->where('media_format', $mediaFormat);                                                                                                                                       │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│  88 +     if ($mediaFormat !== null && $mediaFormat !== '') {                                                                                                                                │
+│  89 +         if ($mediaFormat === 'Uncategorized') {                                                                                                                                        │
+│  90 +             $q->where(function ($subQ) {                                                                                                                                               │
+│  91 +                 $subQ->whereNull('media_format')                                                                                                                                       │
+│  92 +                      ->orWhere('media_format', '')                                                                                                                                     │
+│  93 +                      ->orWhereRaw('LOWER(media_format) = ?', ['null']);                                                                                                                │
+│  94 +             });                                                                                                                                                                        │
+│  95 +         } else {                                                                                                                                                                       │
+│  96 +             $q->where('media_format', $mediaFormat);                                                                                                                                   │
+│  97 +         }                                                                                                                                                                              │
+│  98       }                                                                                                                                                                                  │
+│  99   };                                                                                                                                                                                     │
+│ 100                                                                                                                                                                                          │
+│ 101   $query = Batch::with(['mediaItems' => $filterClosure]);                                                                                                                                │
+│ 102                                                                                                                                                                                          │
+│  79 - if ($search || $genre || $mediaFormat) {                                                                                                                                               │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│ 103 + if (($search !== null && $search !== '') || ($genre !== null && $genre !== '') || ($mediaFormat !== null && $mediaFormat !== '')) {                                                    │
+│ 104       $query->whereHas('mediaItems', $filterClosure);                                                                                                                                    │
+│ 105   }                                                                                                                                                                                      │
+│ 106                                                                                                                                                                                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit resources/views/dashboard.blade.php: @extends('layouts.app')... => @extends('layouts.app')...                                                                                        │
+│                                                                                                                                                                                              │
+│ 35       <select x-model="genre" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">                             │
+│ 36           <option value="">All Genres</option>                                                                                                                                            │
+│ 37           @foreach($genres as $genreOption)                                                                                                                                               │
+│ 38 -             <option value="{{ $genreOption }}">{{ $genreOption === null || $genreOption === '' || strtolower((string)$genreOption) === 'null' ? 'Uncategorized' : $genreOption          │
+│    }}</option>                                                                                                                                                                               │
+│ 38 +             <option value="{{ $genreOption }}">{{ $genreOption }}</option>                                                                                                              │
+│ 39           @endforeach                                                                                                                                                                     │
+│ 40       </select>                                                                                                                                                                           │
+│ 41   </div>                                                                                                                                                                                  │
+│ 43       <select x-model="mediaFormat" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">                       │
+│ 44           <option value="">All Formats</option>                                                                                                                                           │
+│ 45           @foreach($mediaFormats as $formatOption)                                                                                                                                        │
+│ 46 -             <option value="{{ $formatOption }}">{{ $formatOption === null || $formatOption === '' || strtolower((string)$formatOption) === 'null' ? 'Uncategorized' : $formatOption     │
+│    }}</option>                                                                                                                                                                               │
+│ 46 +             <option value="{{ $formatOption }}">{{ $formatOption }}</option>                                                                                                            │
+│ 47           @endforeach                                                                                                                                                                     │
+│ 48       </select>                                                                                                                                                                           │
+│ 49   </div>                                                                                                                                                                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell php artisan test [current working directory /home/gerb/Projects/media-vault-laravel] (Run the tests to ensure the application remains stable after updating the filtering logic)    │
+│                                                                                                                                                                                              │
+│ ... first 21 lines hidden (Ctrl+O to show) ...                                                                                                                                               │
+│   ✓ the application returns a successful response                                                                                                                                    0.02s   │
+│                                                                                                                                                                                              │
+│    PASS  Tests\Feature\MediaUploadTest                                                                                                                                                       │
+│   ✓ raw text is split into multiple media items                                                                                                                                      0.03s   │
+│   ✓ raw text with crlf is split into multiple media items                                                                                                                            0.01s   │
+│   ✓ empty lines are filtered out                                                                                                                                                     0.01s   │
+│   ✓ user reported case with newline                                                                                                                                                  0.01s   │
+│   ✓ user reported case with literal newline string                                                                                                                                   0.01s   │
+│                                                                                                                                                                                              │
+│   Tests:    15 passed (42 assertions)                                                                                                                                                        │
+│   Duration: 0.69s                                                                                                                                                                            │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I have completely refactored how the dropdowns pull their categories and how the backend handles the filtering.
+
+  Here's what was happening: The blade template's ternary operator was converting any null, empty string, or "null" value in the $genres list into the text "Uncategorized" inside the <option> tag,
+  but keeping its original value. Since the database actually stores "Null" (as you showed), it was producing <option value="Null">Uncategorized</option>. In cases where there was a blank string,
+  it also produced <option value="">Uncategorized</option>. And since the "All Genres" option was <option value="">All Genres</option>, Alpine.js and the backend were getting confused because
+  selecting an option with an empty value (value="") acts as the "show all" trigger!
+
+  To fix this:
+   1. Controller Mapping: In DashboardController@index, the code now maps null, empty strings, and "null" directly to the string 'Uncategorized'. I then applied the unique() method after this
+      mapping. This guarantees "Uncategorized" will only ever appear exactly once in the list!
+   2. Backend Filtering Update: In the data() method, when it receives the string 'Uncategorized' for either genre or format, the backend now executes a custom where query to grab items where the
+      column IS NULL, ='', or LOWER() = 'null'. 
+   3. Ignore Empty Filtering: The backend now strictly uses !== '' to ensure that it skips filtering (acting as "Show All") if the user clicks the default <option value="">All Genres</option>.
+   4. Cleaned up View: In dashboard.blade.php, we no longer need the complicated ternary operator inside the <option> loop because the Controller passes a clean, unique list of formatted strings!
