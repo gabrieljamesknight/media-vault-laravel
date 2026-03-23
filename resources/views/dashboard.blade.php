@@ -8,11 +8,19 @@
 
 @section('content')
     <header>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center py-6">
             <h1 class="text-3xl font-bold leading-tight text-gray-900">Processing Results</h1>
-            <div class="flex items-center space-x-2 text-sm text-gray-500">
-                <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-                <span>Live Updates On</span>
+            <div class="flex items-center space-x-4">
+                <a href="{{ route('dashboard.export') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download CSV
+                </a>
+                <div class="flex items-center space-x-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-full border border-gray-100 shadow-sm">
+                    <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="font-medium">Live Updates On</span>
+                </div>
             </div>
         </div>
     </header>
@@ -39,9 +47,20 @@
                         <div class="px-4 py-5 sm:p-6">
                             <div class="md:flex md:items-center md:justify-between mb-4">
                                 <div class="flex-1 min-w-0">
-                                    <h2 class="text-xl font-bold leading-7 text-gray-900 sm:text-2xl sm:truncate">
-                                        Batch #<span x-text="batch.id"></span> - <span x-text="batch.original_filename || 'Raw Text Input'"></span>
-                                    </h2>
+                                    <div class="flex items-center space-x-4">
+                                        <h2 class="text-xl font-bold leading-7 text-gray-900 sm:text-2xl sm:truncate">
+                                            Batch #<span x-text="batch.id"></span> - <span x-text="batch.original_filename || 'Raw Text Input'"></span>
+                                        </h2>
+                                        <template x-if="batch.status === 'completed'">
+                                            <a :href="`{{ route('dashboard.export.batch', ':id') }}`.replace(':id', batch.id)" 
+                                               class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                                                <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                </svg>
+                                                Download Batch
+                                            </a>
+                                        </template>
+                                    </div>
                                     <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
                                         <div class="mt-2 flex items-center text-sm text-gray-500">
                                             <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
