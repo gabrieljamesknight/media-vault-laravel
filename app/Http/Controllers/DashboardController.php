@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Batch;
+use App\Models\MediaItem;
 use App\Services\CatalogExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,7 +36,17 @@ class DashboardController extends Controller
             ->latest()
             ->get();
 
-        return view('dashboard', compact('batches'));
+        $genres = MediaItem::distinct()
+            ->pluck('genre')
+            ->sort()
+            ->values();
+
+        $mediaFormats = MediaItem::distinct()
+            ->pluck('media_format')
+            ->sort()
+            ->values();
+
+        return view('dashboard', compact('batches', 'genres', 'mediaFormats'));
     }
 
     /**

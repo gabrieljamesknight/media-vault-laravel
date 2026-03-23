@@ -34,25 +34,17 @@
                     <div class="w-full sm:w-48">
                         <select x-model="genre" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">
                             <option value="">All Genres</option>
-                            <option value="Action">Action</option>
-                            <option value="Comedy">Comedy</option>
-                            <option value="Drama">Drama</option>
-                            <option value="Horror">Horror</option>
-                            <option value="Sci-Fi">Sci-Fi</option>
-                            <option value="Rock">Rock</option>
-                            <option value="Pop">Pop</option>
-                            <option value="Jazz">Jazz</option>
+                            @foreach($genres as $genreOption)
+                                <option value="{{ $genreOption }}">{{ $genreOption === null || $genreOption === '' || strtolower((string)$genreOption) === 'null' ? 'Uncategorized' : $genreOption }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="w-full sm:w-48">
                         <select x-model="mediaFormat" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">
                             <option value="">All Formats</option>
-                            <option value="DVD">DVD</option>
-                            <option value="Blu-ray">Blu-ray</option>
-                            <option value="VHS">VHS</option>
-                            <option value="CD">CD</option>
-                            <option value="Vinyl">Vinyl</option>
-                            <option value="Cassette">Cassette</option>
+                            @foreach($mediaFormats as $formatOption)
+                                <option value="{{ $formatOption }}">{{ $formatOption === null || $formatOption === '' || strtolower((string)$formatOption) === 'null' ? 'Uncategorized' : $formatOption }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>

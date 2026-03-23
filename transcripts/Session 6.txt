@@ -339,3 +339,166 @@ i want to add searching and category filtering to the  dashboard. in resources/v
   used for testing. However, ExampleTest.php was missing the RefreshDatabase trait, so the migrations were never running before the test, causing it to fail.
 
   I've added the RefreshDatabase trait to tests/Feature/ExampleTest.php and run the tests again. All 15 tests are now passing successfully!
+
+   > i want to make it so that, in the media type and genre drop down menus, it only shows categories that actually exist in the database instead of a pre-defined set of categories                  
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell grep -rn "public function index()" app/Http/Controllers/DashboardController.php [current working directory /home/gerb/Projects/media-vault-laravel] (Find index method in Dashboar… │
+│                                                                                                                                                                                              │
+│ 32:    public function index(): View                                                                                                                                                         │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadFile app/.../DashboardController.php                                                                                                                                                  │
+│                                                                                                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit app/.../DashboardController.php: <?php... => <?php...                                                                                                                                │
+│                                                                                                                                                                                              │
+│  5   namespace App\Http\Controllers;                                                                                                                                                         │
+│  6                                                                                                                                                                                           │
+│  7   use App\Models\Batch;                                                                                                                                                                   │
+│  8 + use App\Models\MediaItem;                                                                                                                                                               │
+│  9   use App\Services\CatalogExportService;                                                                                                                                                  │
+│ 10   use Illuminate\Http\JsonResponse;                                                                                                                                                       │
+│ 11   use Illuminate\Http\Request;                                                                                                                                                            │
+│ ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ │
+│ 36               ->latest()                                                                                                                                                                  │
+│ 37               ->get();                                                                                                                                                                    │
+│ 38                                                                                                                                                                                           │
+│ 38 -         return view('dashboard', compact('batches'));                                                                                                                                   │
+│ 39 +         $genres = MediaItem::whereNotNull('genre')                                                                                                                                      │
+│ 40 +             ->where('genre', '!=', '')                                                                                                                                                  │
+│ 41 +             ->distinct()                                                                                                                                                                │
+│ 42 +             ->pluck('genre')                                                                                                                                                            │
+│ 43 +             ->sort()                                                                                                                                                                    │
+│ 44 +             ->values();                                                                                                                                                                 │
+│ 45 +                                                                                                                                                                                         │
+│ 46 +         $mediaFormats = MediaItem::whereNotNull('media_format')                                                                                                                         │
+│ 47 +             ->where('media_format', '!=', '')                                                                                                                                           │
+│ 48 +             ->distinct()                                                                                                                                                                │
+│ 49 +             ->pluck('media_format')                                                                                                                                                     │
+│ 50 +             ->sort()                                                                                                                                                                    │
+│ 51 +             ->values();                                                                                                                                                                 │
+│ 52 +                                                                                                                                                                                         │
+│ 53 +         return view('dashboard', compact('batches', 'genres', 'mediaFormats'));                                                                                                         │
+│ 54       }                                                                                                                                                                                   │
+│ 55                                                                                                                                                                                           │
+│ 56       /**                                                                                                                                                                                 │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit resources/views/dashboard.blade.php: @extends('layouts.app')... => @extends('layouts.app')...                                                                                        │
+│                                                                                                                                                                                              │
+│ 34       <div class="w-full sm:w-48">                                                                                                                                                        │
+│ 35           <select x-model="genre" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">                         │
+│ 36               <option value="">All Genres</option>                                                                                                                                        │
+│ 37 -             <option value="Action">Action</option>                                                                                                                                      │
+│ 38 -             <option value="Comedy">Comedy</option>                                                                                                                                      │
+│ 39 -             <option value="Drama">Drama</option>                                                                                                                                        │
+│ 40 -             <option value="Horror">Horror</option>                                                                                                                                      │
+│ 41 -             <option value="Sci-Fi">Sci-Fi</option>                                                                                                                                      │
+│ 42 -             <option value="Rock">Rock</option>                                                                                                                                          │
+│ 43 -             <option value="Pop">Pop</option>                                                                                                                                            │
+│ 44 -             <option value="Jazz">Jazz</option>                                                                                                                                          │
+│ 37 +             @foreach($genres as $genreOption)                                                                                                                                           │
+│ 38 +                 <option value="{{ $genreOption }}">{{ $genreOption }}</option>                                                                                                          │
+│ 39 +             @endforeach                                                                                                                                                                 │
+│ 40           </select>                                                                                                                                                                       │
+│ 41       </div>                                                                                                                                                                              │
+│ 42       <div class="w-full sm:w-48">                                                                                                                                                        │
+│ 43           <select x-model="mediaFormat" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">                   │
+│ 44               <option value="">All Formats</option>                                                                                                                                       │
+│ 50 -             <option value="DVD">DVD</option>                                                                                                                                            │
+│ 51 -             <option value="Blu-ray">Blu-ray</option>                                                                                                                                    │
+│ 52 -             <option value="VHS">VHS</option>                                                                                                                                            │
+│ 53 -             <option value="CD">CD</option>                                                                                                                                              │
+│ 54 -             <option value="Vinyl">Vinyl</option>                                                                                                                                        │
+│ 55 -             <option value="Cassette">Cassette</option>                                                                                                                                  │
+│ 45 +             @foreach($mediaFormats as $formatOption)                                                                                                                                    │
+│ 46 +                 <option value="{{ $formatOption }}">{{ $formatOption }}</option>                                                                                                        │
+│ 47 +             @endforeach                                                                                                                                                                 │
+│ 48           </select>                                                                                                                                                                       │
+│ 49       </div>                                                                                                                                                                              │
+│ 50   </div>                                                                                                                                                                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Shell php artisan test [current working directory /home/gerb/Projects/media-vault-laravel] (Run all tests to verify that the controller changes didn't break any functionality)           │
+│                                                                                                                                                                                              │
+│ ... first 21 lines hidden (Ctrl+O to show) ...                                                                                                                                               │
+│   ✓ the application returns a successful response                                                                                                                                    0.02s   │
+│                                                                                                                                                                                              │
+│    PASS  Tests\Feature\MediaUploadTest                                                                                                                                                       │
+│   ✓ raw text is split into multiple media items                                                                                                                                      0.02s   │
+│   ✓ raw text with crlf is split into multiple media items                                                                                                                            0.01s   │
+│   ✓ empty lines are filtered out                                                                                                                                                     0.01s   │
+│   ✓ user reported case with newline                                                                                                                                                  0.01s   │
+│   ✓ user reported case with literal newline string                                                                                                                                   0.01s   │
+│                                                                                                                                                                                              │
+│   Tests:    15 passed (42 assertions)                                                                                                                                                        │
+│   Duration: 0.69s                                                                                                                                                                            │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I've updated the DashboardController to query the unique genre and media_format values from the MediaItem database table dynamically, filtering out any empty/null values, and then passed them to
+  the dashboard view. 
+
+  I also updated dashboard.blade.php so that both of those <select> menus loop over the newly provided variables instead of using the hard-coded sets of categories. Now they will only show options
+  that exist in the parsed items!
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+ > this has made it so dynamic dropdown menus are displaying Null values when they would be better being listed as something like 'uncategorized'. in DashboardController@index, when you fetch the 
+   unique $genres and $mediaFormats, do not use whereNotNull(). We want to retrieve all unique states. in resources/views/dashboard.blade.php, update the @foreach loops for both dropdowns. Add a  
+   simple Blade conditional or ternary operator: if the category name is null, an empty string "", or the literal string "null", display the text "Uncategorized" inside the <option>. Otherwise,   
+   display the actual category name. ensure the value attribute of the <option> correctly matches what the backend needs to filter those specific items (for example if it's the literal string     
+   "null", keep the value as "null" so the query still works)                                                                                                                                       
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  ReadManyFiles Will attempt to read and concatenate files using patterns:                                                                                                                  │
+│                                                                                                                                                                                              │
+│ ReadManyFiles Result (Target Dir: /home/gerb/Projects/media-vault-laravel)                                                                                                                   │
+│                                                                                                                                                                                              │
+│ Successfully read and concatenated content from 1 file(s).                                                                                                                                   │
+│                                                                                                                                                                                              │
+│ Processed Files:                                                                                                                                                                             │
+│  - public/index.php                                                                                                                                                                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✓  Edit app/.../DashboardController.php: <?php... => <?php...                                                                                                                                │
+│                                                                                                                                                                                              │
+│ 36       ->latest()                                                                                                                                                                          │
+│ 37       ->get();                                                                                                                                                                            │
+│ 38                                                                                                                                                                                           │
+│ 39 - $genres = MediaItem::whereNotNull('genre')                                                                                                                                              │
+│ 40 -     ->where('genre', '!=', '')                                                                                                                                                          │
+│ 41 -     ->distinct()                                                                                                                                                                        │
+│ 39 + $genres = MediaItem::distinct()                                                                                                                                                         │
+│ 40       ->pluck('genre')                                                                                                                                                                    │
+│ 41       ->sort()                                                                                                                                                                            │
+│ 42       ->values();                                                                                                                                                                         │
+│ 43                                                                                                                                                                                           │
+│ 46 - $mediaFormats = MediaItem::whereNotNull('media_format')                                                                                                                                 │
+│ 47 -     ->where('media_format', '!=', '')                                                                                                                                                   │
+│ 48 -     ->distinct()                                                                                                                                                                        │
+│ 44 + $mediaFormats = MediaItem::distinct()                                                                                                                                                   │
+│ 45       ->pluck('media_format')                                                                                                                                                             │
+│ 46       ->sort()                                                                                                                                                                            │
+│                                                                                                                                                                                              │
+│ ✓  Edit resources/views/dashboard.blade.php: @extends('layouts.app')... => @extends('layouts.app')...                                                                                        │
+│                                                                                                                                                                                              │
+│ 35       <select x-model="genre" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">                             │
+│ 36           <option value="">All Genres</option>                                                                                                                                            │
+│ 37           @foreach($genres as $genreOption)                                                                                                                                               │
+│ 38 -             <option value="{{ $genreOption }}">{{ $genreOption }}</option>                                                                                                              │
+│ 38 +             <option value="{{ $genreOption }}">{{ $genreOption === null || $genreOption === '' || $genreOption === 'null' ? 'Uncategorized' : $genreOption }}</option>                  │
+│ 39           @endforeach                                                                                                                                                                     │
+│ 40       </select>                                                                                                                                                                           │
+│ 41   </div>                                                                                                                                                                                  │
+│ 43       <select x-model="mediaFormat" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">                       │
+│ 44           <option value="">All Formats</option>                                                                                                                                           │
+│ 45           @foreach($mediaFormats as $formatOption)                                                                                                                                        │
+│ 46 -             <option value="{{ $formatOption }}">{{ $formatOption }}</option>                                                                                                            │
+│ 46 +             <option value="{{ $formatOption }}">{{ $formatOption === null || $formatOption === '' || $formatOption === 'null' ? 'Uncategorized' : $formatOption }}</option>             │
+│ 47           @endforeach                                                                                                                                                                     │
+│ 48       </select>                                                                                                                                                                           │
+│ 49   </div>                                                                                                                                                                                  │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+✦ I've updated app/Http/Controllers/DashboardController.php to remove the whereNotNull() and where('...', '!=', '') restrictions when querying the unique categories. 
+
+  Then, in resources/views/dashboard.blade.php, I updated the two @foreach loops handling the options for the <select> dropdowns to include the logic that translates null, "", and "null" to
+  "Uncategorized", while leaving the value attribute equal to the variable itself so filtering continues to function properly.
