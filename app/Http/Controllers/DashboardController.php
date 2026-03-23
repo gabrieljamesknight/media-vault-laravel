@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Batch;
+use App\Models\MediaItem;
 use App\Services\CatalogExportService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -34,17 +36,51 @@ class DashboardController extends Controller
             ->latest()
             ->get();
 
-        return view('dashboard', compact('batches'));
+        $genres = MediaItem::distinct()
+            ->pluck('genre')
+            ->sort()
+            ->values();
+
+        $mediaFormats = MediaItem::distinct()
+            ->pluck('media_format')
+            ->sort()
+            ->values();
+
+        return view('dashboard', compact('batches', 'genres', 'mediaFormats'));
     }
 
     /**
      * Get the dashboard data as JSON.
      */
-    public function data(): JsonResponse
+    public function data(Request $request): JsonResponse
     {
-        $batches = Batch::with('mediaItems')
-            ->latest()
-            ->get();
+        $search = $request->query('search');
+        $genre = $request->query('genre');
+        $mediaFormat = $request->query('media_format');
+
+        $filterClosure = function ($q) use ($search, $genre, $mediaFormat) {
+            if ($search) {
+                $q->where(function ($subQ) use ($search) {
+                    $subQ->where('product_name', 'like', '%' . $search . '%')
+                         ->orWhere('artist_or_director', 'like', '%' . $search . '%')
+                         ->orWhere('raw_data', 'like', '%' . $search . '%');
+                });
+            }
+            if ($genre) {
+                $q->where('genre', $genre);
+            }
+            if ($mediaFormat) {
+                $q->where('media_format', $mediaFormat);
+            }
+        };
+
+        $query = Batch::with(['mediaItems' => $filterClosure]);
+
+        if ($search || $genre || $mediaFormat) {
+            $query->whereHas('mediaItems', $filterClosure);
+        }
+
+        $batches = $query->latest()->get();
 
         return response()->json([
             'batches' => $batches
