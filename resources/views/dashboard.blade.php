@@ -27,6 +27,36 @@
     <main>
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="px-4 py-8 sm:px-0">
+                <div class="mb-6 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    <div class="flex-1">
+                        <input type="text" x-model.debounce.300ms="search" placeholder="Search product, artist, or raw data..." class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">
+                    </div>
+                    <div class="w-full sm:w-48">
+                        <select x-model="genre" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">
+                            <option value="">All Genres</option>
+                            <option value="Action">Action</option>
+                            <option value="Comedy">Comedy</option>
+                            <option value="Drama">Drama</option>
+                            <option value="Horror">Horror</option>
+                            <option value="Sci-Fi">Sci-Fi</option>
+                            <option value="Rock">Rock</option>
+                            <option value="Pop">Pop</option>
+                            <option value="Jazz">Jazz</option>
+                        </select>
+                    </div>
+                    <div class="w-full sm:w-48">
+                        <select x-model="mediaFormat" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">
+                            <option value="">All Formats</option>
+                            <option value="DVD">DVD</option>
+                            <option value="Blu-ray">Blu-ray</option>
+                            <option value="VHS">VHS</option>
+                            <option value="CD">CD</option>
+                            <option value="Vinyl">Vinyl</option>
+                            <option value="Cassette">Cassette</option>
+                        </select>
+                    </div>
+                </div>
+
                 <template x-if="batches.length === 0">
                     <div class="text-center py-12">
                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -139,18 +169,35 @@
     <script>
         function dashboard() {
             return {
+                search: '',
+                genre: '',
+                mediaFormat: '',
                 batches: @json($batches),
                 
                 initPolling() {
-                    setInterval(async () => {
-                        try {
-                            const response = await fetch('{{ route('dashboard.data') }}');
-                            const data = await response.json();
-                            this.batches = data.batches;
-                        } catch (error) {
-                            console.error('Failed to fetch dashboard data:', error);
-                        }
+                    this.$watch('search', () => this.fetchData());
+                    this.$watch('genre', () => this.fetchData());
+                    this.$watch('mediaFormat', () => this.fetchData());
+
+                    setInterval(() => {
+                        this.fetchData();
                     }, 3000);
+                },
+
+                async fetchData() {
+                    try {
+                        const params = new URLSearchParams({
+                            search: this.search,
+                            genre: this.genre,
+                            media_format: this.mediaFormat
+                        });
+                        
+                        const response = await fetch(`{{ route('dashboard.data') }}?${params.toString()}`);
+                        const data = await response.json();
+                        this.batches = data.batches;
+                    } catch (error) {
+                        console.error('Failed to fetch dashboard data:', error);
+                    }
                 },
 
                 getBatchProgressText(batch) {
