@@ -55,6 +55,46 @@ class MediaEnrichmentServiceTest extends TestCase
     }
 
     /**
+     * Test that the enrich method correctly infers the genre for well-known media.
+     */
+    public function test_enrich_infers_genre_for_known_media(): void
+    {
+        Config::set('services.gemini.key', 'test-key');
+
+        $mockResponse = [
+            'candidates' => [
+                [
+                    'content' => [
+                        'parts' => [
+                            [
+                                'text' => json_encode([
+                                    'product_name' => 'In Utero',
+                                    'artist_or_director' => 'Nirvana',
+                                    'media_format' => 'CD',
+                                    'genre' => 'Grunge',
+                                    'condition' => null,
+                                ])
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response($mockResponse, 200),
+        ]);
+
+        $service = new MediaEnrichmentService();
+        $result = $service->enrich('nirvana in utero cd');
+
+        $this->assertNotNull($result);
+        $this->assertEquals('In Utero', $result['product_name']);
+        $this->assertEquals('Nirvana', $result['artist_or_director']);
+        $this->assertEquals('Grunge', $result['genre']);
+    }
+
+    /**
      * Test that the enrich method returns null on API failure.
      */
     public function test_enrich_returns_null_on_api_failure(): void

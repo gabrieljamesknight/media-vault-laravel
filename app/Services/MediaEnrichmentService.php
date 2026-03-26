@@ -48,7 +48,16 @@ class MediaEnrichmentService
             return null;
         }
 
-        $prompt = "You are a data categorizer. Extract the following into JSON: product_name, artist_or_director, media_format, genre, condition. If you cannot determine a value, return null. Return ONLY raw JSON. \n\nInput: {$rawMediaString}";
+        $prompt = "You are a media data enricher. Your goal is to structure messy product strings into a clean JSON schema.
+For each input, determine the following: product_name, artist_or_director, media_format, genre, and condition.
+
+CRITICAL INSTRUCTION FOR GENRE:
+If the genre is not explicitly mentioned in the input string (e.g., 'Nirvana In Utero cd'), you MUST use your internal knowledge to infer or deduce the correct genre (e.g., 'Grunge' or 'Rock') based on the identified artist and product name.
+Only return null for a field if the item is completely obscure, unrecognizable, or if you cannot reasonably deduce the information from the context or your general knowledge.
+
+Return ONLY raw JSON.
+
+Input: {$rawMediaString}";
 
         try {
             $url = "{$this->baseUrl}/{$this->model}:generateContent?key={$this->apiKey}";
