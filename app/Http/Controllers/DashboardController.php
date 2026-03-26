@@ -36,23 +36,19 @@ class DashboardController extends Controller
             ->latest()
             ->get();
 
-        $genres = MediaItem::distinct()
-            ->pluck('genre')
-            ->map(function ($genre) {
-                return ($genre === null || $genre === '' || strtolower((string)$genre) === 'null') ? 'Uncategorized' : $genre;
-            })
-            ->unique()
-            ->sort()
-            ->values();
+        $genres = MediaItem::whereNotNull('genre')
+            ->where('genre', '!=', '')
+            ->whereRaw('LOWER(genre) != ?', ['null'])
+            ->distinct()
+            ->orderBy('genre')
+            ->pluck('genre');
 
-        $mediaFormats = MediaItem::distinct()
-            ->pluck('media_format')
-            ->map(function ($format) {
-                return ($format === null || $format === '' || strtolower((string)$format) === 'null') ? 'Uncategorized' : $format;
-            })
-            ->unique()
-            ->sort()
-            ->values();
+        $mediaFormats = MediaItem::whereNotNull('media_format')
+            ->where('media_format', '!=', '')
+            ->whereRaw('LOWER(media_format) != ?', ['null'])
+            ->distinct()
+            ->orderBy('media_format')
+            ->pluck('media_format');
 
         return view('dashboard', compact('batches', 'genres', 'mediaFormats'));
     }
@@ -75,26 +71,10 @@ class DashboardController extends Controller
                 });
             }
             if ($genre !== null && $genre !== '') {
-                if ($genre === 'Uncategorized') {
-                    $q->where(function ($subQ) {
-                        $subQ->whereNull('genre')
-                             ->orWhere('genre', '')
-                             ->orWhereRaw('LOWER(genre) = ?', ['null']);
-                    });
-                } else {
-                    $q->where('genre', $genre);
-                }
+                $q->where('genre', $genre);
             }
             if ($mediaFormat !== null && $mediaFormat !== '') {
-                if ($mediaFormat === 'Uncategorized') {
-                    $q->where(function ($subQ) {
-                        $subQ->whereNull('media_format')
-                             ->orWhere('media_format', '')
-                             ->orWhereRaw('LOWER(media_format) = ?', ['null']);
-                    });
-                } else {
-                    $q->where('media_format', $mediaFormat);
-                }
+                $q->where('media_format', $mediaFormat);
             }
         };
 
@@ -106,8 +86,24 @@ class DashboardController extends Controller
 
         $batches = $query->latest()->get();
 
+        $genres = MediaItem::whereNotNull('genre')
+            ->where('genre', '!=', '')
+            ->whereRaw('LOWER(genre) != ?', ['null'])
+            ->distinct()
+            ->orderBy('genre')
+            ->pluck('genre');
+
+        $mediaFormats = MediaItem::whereNotNull('media_format')
+            ->where('media_format', '!=', '')
+            ->whereRaw('LOWER(media_format) != ?', ['null'])
+            ->distinct()
+            ->orderBy('media_format')
+            ->pluck('media_format');
+
         return response()->json([
-            'batches' => $batches
+            'batches' => $batches,
+            'genres' => $genres,
+            'media_formats' => $mediaFormats,
         ]);
     }
 

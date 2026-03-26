@@ -34,17 +34,17 @@
                     <div class="w-full sm:w-48">
                         <select x-model="genre" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">
                             <option value="">All Genres</option>
-                            @foreach($genres as $genreOption)
-                                <option value="{{ $genreOption }}">{{ $genreOption }}</option>
-                            @endforeach
+                            <template x-for="genreOption in genres" :key="genreOption">
+                                <option :value="genreOption" x-text="genreOption"></option>
+                            </template>
                         </select>
                     </div>
                     <div class="w-full sm:w-48">
                         <select x-model="mediaFormat" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2.5 px-4">
                             <option value="">All Formats</option>
-                            @foreach($mediaFormats as $formatOption)
-                                <option value="{{ $formatOption }}">{{ $formatOption }}</option>
-                            @endforeach
+                            <template x-for="formatOption in mediaFormats" :key="formatOption">
+                                <option :value="formatOption" x-text="formatOption"></option>
+                            </template>
                         </select>
                     </div>
                 </div>
@@ -165,6 +165,8 @@
                 genre: '',
                 mediaFormat: '',
                 batches: @json($batches),
+                genres: @json($genres),
+                mediaFormats: @json($mediaFormats),
                 
                 initPolling() {
                     this.$watch('search', () => this.fetchData());
@@ -187,6 +189,8 @@
                         const response = await fetch(`{{ route('dashboard.data') }}?${params.toString()}`);
                         const data = await response.json();
                         this.batches = data.batches;
+                        this.genres = data.genres;
+                        this.mediaFormats = data.media_formats;
                     } catch (error) {
                         console.error('Failed to fetch dashboard data:', error);
                     }
