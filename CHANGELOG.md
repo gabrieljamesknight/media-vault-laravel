@@ -1,6 +1,10 @@
 # Release Notes
 
-## [Unreleased](https://github.com/laravel/laravel/compare/v13.1.0...13.x)
+## [Unreleased](https://github.com/laravel/laravel/compare/v1.0.0...main)
+
+## [v1.0.0](https://github.com/laravel/laravel/compare/v13.1.0...v1.0.0) - 2026-03-30
+
+Initial release of MediaVault, An AI-powered cataloging system built with Laravel 11, utilizing background queues and Strict Prompt Engineering to ingest and structure messy physical media data.
 
 ## [v13.1.0](https://github.com/laravel/laravel/compare/v12.12.2...v13.1.0) - 2026-03-18
 
