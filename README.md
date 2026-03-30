@@ -1,6 +1,6 @@
 # MediaVault
 
-MediaVault is an AI-powered, background-processed cataloging system built with **Laravel 11**. It is designed to ingest unstructured, messy physical media data (like raw string inputs of DVDs, CDs, and Vinyls) and utilize Agentic AI (Gemini API) to categorize and structure the data into clean, manageable JSON formats.
+MediaVault is an AI-powered, background-processed cataloging system built with **Laravel 11**. It is designed to ingest unstructured, messy physical media data (like raw string inputs of DVDs, CDs, and Vinyls) and utilize generative AI (Gemini API) to categorize and structure the data into clean, manageable JSON formats.
 
 ![MediaVault Dashboard](docs/mediavault-dashboard.png)
 
